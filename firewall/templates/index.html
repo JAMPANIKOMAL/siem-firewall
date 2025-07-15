@@ -37,7 +37,7 @@
             box-shadow: 0 4px 32px rgba(20, 20, 30, 0.10);
         }
         h1 {
-            color: #58a6ff;
+            color: #2586f6;
             margin-bottom: 32px;
             font-size: 2.2rem;
             text-align: center;
@@ -53,28 +53,27 @@
             margin-bottom: 18px;
         }
         .toggle-btn {
-            background: #21262c;
-            color: #f0f6fc;
+            background: none;
             border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
+            font-size: 22px;
             cursor: pointer;
-            font-size: 15px;
-            transition: background 0.2s;
+            margin-right: 10px;
+            transition: color 0.2s;
+            vertical-align: middle;
         }
-        .toggle-btn:hover {
-            background: #30363d;
+        .toggle-btn:focus {
+            outline: none;
         }
-        body.light-mode .toggle-btn {
-            background: #eaecef;
-            color: #161b22;
-        }
+        .toggle-btn .on { display: none; }
+        .toggle-btn .off { display: inline; }
+        body.light-mode .toggle-btn .on { display: inline; }
+        body.light-mode .toggle-btn .off { display: none; }
         .dashboard-export-btn {
             background: #0366d6;
             color: #fff;
             border: none;
             border-radius: 8px;
-            padding: 8px 16px;
+            padding: 8px 18px;
             cursor: pointer;
             font-size: 15px;
             margin-left: 10px;
@@ -114,7 +113,7 @@
             box-shadow: 0 0 10px rgba(20,20,30,0.04);
         }
         .chart-title {
-            color: #58a6ff;
+            color: #2586f6;
             font-size: 1.1rem;
             margin-bottom: 8px;
             text-align: center;
@@ -125,23 +124,27 @@
         }
         .chart-actions {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            left: 0;
+            right: 0;
+            bottom: 10px;
             display: flex;
-            gap: 4px;
+            justify-content: center;
+            gap: 8px;
+            z-index: 2;
         }
         .chart-download-btn {
             background: #238636;
             color: #fff;
             border: none;
-            border-radius: 6px;
-            padding: 2px 8px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 16px;
             display: flex;
             align-items: center;
-            margin-left: 0;
-            margin-right: 0;
+            justify-content: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
             transition: background 0.2s;
         }
         .chart-download-btn:hover {
@@ -224,12 +227,15 @@
     <div class="top-bar">
         <h1>🔥 Python Firewall Log Dashboard</h1>
         <div>
-            <button class="toggle-btn" id="toggleModeBtn">🌙 Toggle Dark/Light</button>
+            <button class="toggle-btn" id="toggleModeBtn" title="Toggle Dark/Light">
+                <span class="on">🌞</span>
+                <span class="off">🌙</span>
+            </button>
             <button class="dashboard-export-btn" onclick="exportDashboard('png')" title="Download PNG">
-                <span style="font-size:18px;">🖼️</span> PNG
+                🖼️ PNG
             </button>
             <button class="dashboard-export-btn" onclick="exportDashboard('pdf')" title="Download PDF">
-                <span style="font-size:18px;">📄</span> PDF
+                📄 PDF
             </button>
         </div>
     </div>
@@ -247,39 +253,39 @@
     <div class="charts-container">
         <div class="chart-box">
             <div class="chart-title">Protocol Distribution</div>
+            <canvas id="protocolChart" width="180" height="180"></canvas>
             <div class="chart-actions">
-                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'png')" title="Download PNG">
+                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'png')" title="Download PNG" type="button">
                     🖼️
                 </button>
-                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'pdf')" title="Download PDF">
+                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'pdf')" title="Download PDF" type="button">
                     📄
                 </button>
             </div>
-            <canvas id="protocolChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Action Summary</div>
+            <canvas id="actionChart" width="180" height="180"></canvas>
             <div class="chart-actions">
-                <button class="chart-download-btn" onclick="exportChart('actionChart', 'png')" title="Download PNG">
+                <button class="chart-download-btn" onclick="exportChart('actionChart', 'png')" title="Download PNG" type="button">
                     🖼️
                 </button>
-                <button class="chart-download-btn" onclick="exportChart('actionChart', 'pdf')" title="Download PDF">
+                <button class="chart-download-btn" onclick="exportChart('actionChart', 'pdf')" title="Download PDF" type="button">
                     📄
                 </button>
             </div>
-            <canvas id="actionChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Top Source IPs</div>
+            <canvas id="ipChart" width="180" height="180"></canvas>
             <div class="chart-actions">
-                <button class="chart-download-btn" onclick="exportChart('ipChart', 'png')" title="Download PNG">
+                <button class="chart-download-btn" onclick="exportChart('ipChart', 'png')" title="Download PNG" type="button">
                     🖼️
                 </button>
-                <button class="chart-download-btn" onclick="exportChart('ipChart', 'pdf')" title="Download PDF">
+                <button class="chart-download-btn" onclick="exportChart('ipChart', 'pdf')" title="Download PDF" type="button">
                     📄
                 </button>
             </div>
-            <canvas id="ipChart" width="180" height="180"></canvas>
         </div>
     </div>
 
