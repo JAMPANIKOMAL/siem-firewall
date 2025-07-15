@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Python Firewall Dashboard</title>
 
-    <!-- ✅ DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
@@ -38,13 +39,6 @@
             font-size: 14px;
         }
 
-        .filter-input:focus,
-        .filter-select:focus {
-            outline: none;
-            border-color: #58a6ff;
-            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
-        }
-
         .filter-btn {
             background-color: #238636;
             border: none;
@@ -66,68 +60,148 @@
         }
 
         .dataTables_filter {
-            display: none !important; /* ❌ Hide DataTables built-in search */
+            display: none !important;
         }
     </style>
 </head>
-
 <body>
-    <h1>🔥 Python Firewall Log Dashboard</h1>
 
-    <form method="get" class="filter-form">
-        <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}" class="filter-input">
+<h1>🔥 Python Firewall Log Dashboard</h1>
 
-        <select name="action" class="filter-select">
-            <option value="">All</option>
-            <option value="ALLOWED" {% if filter_action=='ALLOWED' %}selected{% endif %}>ALLOWED</option>
-            <option value="BLOCKED" {% if filter_action=='BLOCKED' %}selected{% endif %}>BLOCKED</option>
-        </select>
+<form method="get" class="filter-form">
+    <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}" class="filter-input">
+    <select name="action" class="filter-select">
+        <option value="">All</option>
+        <option value="ALLOWED" {% if filter_action == 'ALLOWED' %}selected{% endif %}>ALLOWED</option>
+        <option value="BLOCKED" {% if filter_action == 'BLOCKED' %}selected{% endif %}>BLOCKED</option>
+    </select>
+    <button type="submit" class="filter-btn">🔍 Search</button>
+</form>
 
-        <button type="submit" class="filter-btn">🔍 Search</button>
-    </form>
+<!-- Charts Section -->
+<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+    <canvas id="protocolChart" width="300" height="300"></canvas>
+    <canvas id="actionChart" width="300" height="300"></canvas>
+    <canvas id="ipChart" width="300" height="300"></canvas>
+</div>
 
-    <table id="logTable" class="display">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Time</th>
-                <th>Source IP</th>
-                <th>Destination IP</th>
-                <th>Protocol</th>
-                <th>Action</th>
-                <th>Reason</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td>{{ log[0] }}</td>
-                <td>{{ log[1] }}</td>
-                <td>{{ log[2] }}</td>
-                <td>{{ log[3] }}</td>
-                <td>{{ log[4] }}</td>
-                <td>{{ log[5] }}</td>
-                <td>{{ log[6] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Logs Table -->
+<table id="logTable" class="display">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Time</th>
+            <th>Source IP</th>
+            <th>Destination IP</th>
+            <th>Protocol</th>
+            <th>Action</th>
+            <th>Reason</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log[0] }}</td>
+            <td>{{ log[1] }}</td>
+            <td>{{ log[2] }}</td>
+            <td>{{ log[3] }}</td>
+            <td>{{ log[4] }}</td>
+            <td>{{ log[5] }}</td>
+            <td>{{ log[6] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- ✅ DataTables Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            $('#logTable').DataTable({
-                pageLength: 25,
-                order: [[0, "desc"]],
-                language: {
-                    search: "", // Hidden
-                    searchPlaceholder: "Search logs..."
-                }
-            });
+<!-- Init DataTable -->
+<script>
+    $(document).ready(function () {
+        $('#logTable').DataTable({
+            pageLength: 25,
+            order: [[0, "desc"]],
+            language: {
+                search: "",
+                searchPlaceholder: "Search logs..."
+            }
         });
-    </script>
-</body>
+    });
+</script>
 
+<!-- Charts -->
+<script>
+    const protocolData = {
+        labels: {{ protocols | map(attribute=0) | list | tojson | safe }},
+        datasets: [{
+            data: {{ protocols | map(attribute=1) | list | tojson | safe }},
+            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#8e44ad']
+        }]
+    };
+
+    const actionData = {
+        labels: {{ actions | map(attribute=0) | list | tojson | safe }},
+        datasets: [{
+            data: {{ actions | map(attribute=1) | list | tojson | safe }},
+            backgroundColor: ['#2ea043', '#d73a49']
+        }]
+    };
+
+    const ipData = {
+        labels: {{ top_ips | map(attribute=0) | list | tojson | safe }},
+        datasets: [{
+            label: 'Packets',
+            data: {{ top_ips | map(attribute=1) | list | tojson | safe }},
+            backgroundColor: '#58a6ff'
+        }]
+    };
+
+    new Chart(document.getElementById('protocolChart'), {
+        type: 'pie',
+        data: protocolData,
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Protocol Distribution'
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('actionChart'), {
+        type: 'doughnut',
+        data: actionData,
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Action Summary'
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('ipChart'), {
+        type: 'bar',
+        data: ipData,
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Top Source IPs'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#f0f6fc' }
+                },
+                x: {
+                    ticks: { color: '#f0f6fc' }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
 </html>

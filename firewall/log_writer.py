@@ -62,3 +62,29 @@ def fetch_filtered_logs(query="", action=""):
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+
+def get_protocol_stats():
+    conn = sqlite3.connect("logs.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT protocol, COUNT(*) FROM logs GROUP BY protocol")
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
+def get_action_stats():
+    conn = sqlite3.connect("logs.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT action, COUNT(*) FROM logs GROUP BY action")
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
+def get_top_source_ips(limit=5):
+    conn = sqlite3.connect("logs.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT src_ip, COUNT(*) FROM logs GROUP BY src_ip ORDER BY COUNT(*) DESC LIMIT ?", (limit,))
+    data = cursor.fetchall()
+    conn.close()
+    return data
