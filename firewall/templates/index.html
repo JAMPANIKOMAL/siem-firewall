@@ -7,6 +7,8 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         body {
@@ -15,8 +17,12 @@
             color: #f0f6fc;
             padding: 0;
             margin: 0;
+            transition: background 0.3s, color 0.3s;
         }
-
+        body.light-mode {
+            background-color: #f6f8fa;
+            color: #161b22;
+        }
         .container {
             max-width: 1200px;
             margin: 30px auto;
@@ -24,8 +30,12 @@
             background: #161b22;
             border-radius: 16px;
             box-shadow: 0 4px 32px rgba(20, 20, 30, 0.25);
+            transition: background 0.3s;
         }
-
+        body.light-mode .container {
+            background: #fff;
+            box-shadow: 0 4px 32px rgba(20, 20, 30, 0.10);
+        }
         h1 {
             color: #58a6ff;
             margin-bottom: 32px;
@@ -33,39 +43,60 @@
             text-align: center;
             letter-spacing: 1px;
         }
-
-        .filter-form {
+        body.light-mode h1 {
+            color: #0366d6;
+        }
+        .top-bar {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 28px;
-            justify-content: center;
+            margin-bottom: 18px;
         }
-
-        .filter-input,
-        .filter-select,
-        .filter-btn {
-            padding: 10px 16px;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            background-color: #161b22;
+        .toggle-btn {
+            background: #21262c;
             color: #f0f6fc;
-            font-size: 15px;
-            outline: none;
-        }
-
-        .filter-btn {
-            background-color: #238636;
             border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
             cursor: pointer;
-            transition: background 0.2s ease;
-            font-weight: bold;
+            font-size: 15px;
+            transition: background 0.2s;
         }
-
-        .filter-btn:hover {
-            background-color: #2ea043;
+        .toggle-btn:hover {
+            background: #30363d;
         }
-
+        body.light-mode .toggle-btn {
+            background: #eaecef;
+            color: #161b22;
+        }
+        .export-btn {
+            background: #238636;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+        .export-btn:hover {
+            background: #2ea043;
+        }
+        .dashboard-export-btn {
+            background: #0366d6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+        .dashboard-export-btn:hover {
+            background: #2188ff;
+        }
         .charts-container {
             display: flex;
             flex-wrap: wrap;
@@ -73,12 +104,11 @@
             gap: 24px;
             margin-bottom: 36px;
         }
-
         .chart-box {
             flex: 1 1 220px;
-            max-width: 260px;
-            min-width: 220px;
-            height: 220px;
+            max-width: 240px;
+            min-width: 200px;
+            height: 240px;
             background-color: #161b22;
             padding: 16px;
             border-radius: 14px;
@@ -86,9 +116,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            position: relative;
+            transition: background 0.3s;
         }
-
+        body.light-mode .chart-box {
+            background-color: #f6f8fa;
+            box-shadow: 0 0 10px rgba(20,20,30,0.04);
+        }
         .chart-title {
             color: #58a6ff;
             font-size: 1.1rem;
@@ -96,30 +131,46 @@
             text-align: center;
             font-weight: 500;
         }
-
+        body.light-mode .chart-title {
+            color: #0366d6;
+        }
+        .chart-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+        }
         table.dataTable {
             width: 100% !important;
             border-radius: 10px;
             overflow: hidden;
             background: #161b22;
         }
-
+        body.light-mode table.dataTable {
+            background: #fff;
+        }
         table.dataTable thead th {
             background-color: #21262c;
             color: #ffffff;
             font-size: 15px;
             border-bottom: 2px solid #30363d;
         }
-
+        body.light-mode table.dataTable thead th {
+            background-color: #eaecef;
+            color: #161b22;
+            border-bottom: 2px solid #d1d5da;
+        }
         table.dataTable tbody td {
             color: #c9d1d9;
             font-size: 14px;
         }
-
+        body.light-mode table.dataTable tbody td {
+            color: #161b22;
+        }
         .dataTables_filter {
             display: none !important;
         }
-
         .dataTables_wrapper .dataTables_paginate .paginate_button {
             color: #f0f6fc !important;
             background: #161b22 !important;
@@ -127,14 +178,25 @@
             border-radius: 6px !important;
             margin: 0 2px;
         }
+        body.light-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: #161b22 !important;
+            background: #eaecef !important;
+            border: 1px solid #d1d5da !important;
+        }
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
             background: #238636 !important;
+            color: #fff !important;
+        }
+        body.light-mode .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0366d6 !important;
             color: #fff !important;
         }
         .dataTables_wrapper .dataTables_info {
             color: #f0f6fc !important;
         }
-
+        body.light-mode .dataTables_wrapper .dataTables_info {
+            color: #161b22 !important;
+        }
         @media (max-width: 900px) {
             .charts-container {
                 flex-direction: column;
@@ -148,8 +210,15 @@
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🔥 Python Firewall Log Dashboard</h1>
+<div class="container" id="dashboard">
+    <div class="top-bar">
+        <h1>🔥 Python Firewall Log Dashboard</h1>
+        <div>
+            <button class="toggle-btn" id="toggleModeBtn">🌙 Toggle Dark/Light</button>
+            <button class="dashboard-export-btn" onclick="exportDashboard('png')">Export PNG</button>
+            <button class="dashboard-export-btn" onclick="exportDashboard('pdf')">Export PDF</button>
+        </div>
+    </div>
 
     <form method="get" class="filter-form">
         <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}" class="filter-input">
@@ -164,15 +233,27 @@
     <div class="charts-container">
         <div class="chart-box">
             <div class="chart-title">Protocol Distribution</div>
-            <canvas id="protocolChart" width="200" height="200"></canvas>
+            <div class="chart-actions">
+                <button class="export-btn" onclick="exportChart('protocolChart', 'png')">PNG</button>
+                <button class="export-btn" onclick="exportChart('protocolChart', 'pdf')">PDF</button>
+            </div>
+            <canvas id="protocolChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Action Summary</div>
-            <canvas id="actionChart" width="200" height="200"></canvas>
+            <div class="chart-actions">
+                <button class="export-btn" onclick="exportChart('actionChart', 'png')">PNG</button>
+                <button class="export-btn" onclick="exportChart('actionChart', 'pdf')">PDF</button>
+            </div>
+            <canvas id="actionChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Top Source IPs</div>
-            <canvas id="ipChart" width="200" height="200"></canvas>
+            <div class="chart-actions">
+                <button class="export-btn" onclick="exportChart('ipChart', 'png')">PNG</button>
+                <button class="export-btn" onclick="exportChart('ipChart', 'pdf')">PDF</button>
+            </div>
+            <canvas id="ipChart" width="180" height="180"></canvas>
         </div>
     </div>
 
@@ -205,6 +286,7 @@
 </div>
 
 <script>
+    // DataTable
     $(document).ready(function () {
         $('#logTable').DataTable({
             pageLength: 25,
@@ -214,13 +296,12 @@
                 searchPlaceholder: "Search logs..."
             },
             createdRow: function(row, data, dataIndex) {
-                $(row).css('background-color', '#161b22');
+                $(row).css('background-color', $('body').hasClass('light-mode') ? '#fff' : '#161b22');
             }
         });
     });
-</script>
 
-<script>
+    // Chart.js Data
     const protocolData = {
         labels: {{ protocols | map(attribute=0) | list | tojson | safe }},
         datasets: [{
@@ -228,7 +309,6 @@
             backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#8e44ad', '#2ea043', '#d73a49']
         }]
     };
-
     const actionData = {
         labels: {{ actions | map(attribute=0) | list | tojson | safe }},
         datasets: [{
@@ -236,7 +316,6 @@
             backgroundColor: ['#2ea043', '#d73a49']
         }]
     };
-
     const ipData = {
         labels: {{ top_ips | map(attribute=0) | list | tojson | safe }},
         datasets: [{
@@ -246,50 +325,119 @@
         }]
     };
 
-    new Chart(document.getElementById('protocolChart').getContext('2d'), {
-        type: 'pie',
-        data: protocolData,
-        options: {
+    // Chart.js Options with animation and clickable legend
+    function getChartOptions(title, legendDisplay=true) {
+        return {
+            responsive: false,
             plugins: {
                 legend: {
-                    labels: { color: '#f0f6fc', font: { size: 13 } }
+                    display: legendDisplay,
+                    labels: {
+                        color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc',
+                        font: { size: 13 },
+                        usePointStyle: true,
+                        onClick: function(e, legendItem, legend) {
+                            const index = legendItem.index;
+                            const ci = legend.chart;
+                            const meta = ci.getDatasetMeta(0);
+                            meta.data[index].hidden = !meta.data[index].hidden;
+                            ci.update();
+                        }
+                    }
+                },
+                title: {
+                    display: false,
+                    text: title
                 }
-            }
-        }
-    });
-
-    new Chart(document.getElementById('actionChart').getContext('2d'), {
-        type: 'doughnut',
-        data: actionData,
-        options: {
-            plugins: {
-                legend: {
-                    labels: { color: '#f0f6fc', font: { size: 13 } }
-                }
-            }
-        }
-    });
-
-    new Chart(document.getElementById('ipChart').getContext('2d'), {
-        type: 'bar',
-        data: ipData,
-        options: {
-            plugins: {
-                legend: { display: false }
             },
-            scales: {
+            animation: {
+                duration: 1200,
+                easing: 'easeOutBounce'
+            },
+            scales: title === 'Top Source IPs' ? {
                 y: {
                     beginAtZero: true,
-                    ticks: { color: '#f0f6fc', font: { size: 13 } },
-                    grid: { color: '#30363d' }
+                    ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc', font: { size: 13 } },
+                    grid: { color: document.body.classList.contains('light-mode') ? '#d1d5da' : '#30363d' }
                 },
                 x: {
-                    ticks: { color: '#f0f6fc', font: { size: 13 } },
-                    grid: { color: '#30363d' }
+                    ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc', font: { size: 13 } },
+                    grid: { color: document.body.classList.contains('light-mode') ? '#d1d5da' : '#30363d' }
                 }
-            }
-        }
+            } : undefined
+        };
+    }
+
+    // Chart instances
+    const protocolChart = new Chart(document.getElementById('protocolChart').getContext('2d'), {
+        type: 'pie',
+        data: protocolData,
+        options: getChartOptions('Protocol Distribution')
     });
+    const actionChart = new Chart(document.getElementById('actionChart').getContext('2d'), {
+        type: 'doughnut',
+        data: actionData,
+        options: getChartOptions('Action Summary')
+    });
+    const ipChart = new Chart(document.getElementById('ipChart').getContext('2d'), {
+        type: 'bar',
+        data: ipData,
+        options: getChartOptions('Top Source IPs', false)
+    });
+
+    // Export chart as PNG/PDF
+    function exportChart(chartId, type) {
+        const canvas = document.getElementById(chartId);
+        if (type === 'png') {
+            const link = document.createElement('a');
+            link.download = chartId + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } else if (type === 'pdf') {
+            html2canvas(canvas).then(function(canvasImg) {
+                const imgData = canvasImg.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF();
+                pdf.addImage(imgData, 'PNG', 10, 10, 180, 120);
+                pdf.save(chartId + '.pdf');
+            });
+        }
+    }
+
+    // Export dashboard as PNG/PDF
+    function exportDashboard(type) {
+        const dashboard = document.getElementById('dashboard');
+        html2canvas(dashboard).then(function(canvas) {
+            if (type === 'png') {
+                const link = document.createElement('a');
+                link.download = 'dashboard.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } else if (type === 'pdf') {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [canvas.width, canvas.height]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                pdf.save('dashboard.pdf');
+            }
+        });
+    }
+
+    // Dark mode toggle
+    document.getElementById('toggleModeBtn').onclick = function() {
+        document.body.classList.toggle('light-mode');
+        // Update chart legend colors
+        protocolChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
+        actionChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
+        ipChart.options.scales.x.ticks.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
+        ipChart.options.scales.y.ticks.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
+        ipChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
+        protocolChart.update();
+        actionChart.update();
+        ipChart.update();
+    }
 </script>
 
 </body>
