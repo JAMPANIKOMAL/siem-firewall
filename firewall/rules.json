@@ -1,0 +1,5 @@
+{
+  "blocked_ips": ["1.2.3.4", "192.168.1.100", "12.10.3.42"],
+  "blocked_ports": [23, 4444],
+  "blocked_protocols": ["ICMP"]
+}
