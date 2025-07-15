@@ -69,20 +69,6 @@
             background: #eaecef;
             color: #161b22;
         }
-        .export-btn {
-            background: #238636;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 15px;
-            margin-left: 10px;
-            transition: background 0.2s;
-        }
-        .export-btn:hover {
-            background: #2ea043;
-        }
         .dashboard-export-btn {
             background: #0366d6;
             color: #fff;
@@ -93,6 +79,9 @@
             font-size: 15px;
             margin-left: 10px;
             transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .dashboard-export-btn:hover {
             background: #2188ff;
@@ -139,7 +128,28 @@
             top: 10px;
             right: 10px;
             display: flex;
-            gap: 6px;
+            gap: 4px;
+        }
+        .chart-download-btn {
+            background: #238636;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            margin-left: 0;
+            margin-right: 0;
+            transition: background 0.2s;
+        }
+        .chart-download-btn:hover {
+            background: #2ea043;
+        }
+        body.light-mode .chart-download-btn {
+            background: #0366d6;
+            color: #fff;
         }
         table.dataTable {
             width: 100% !important;
@@ -215,8 +225,12 @@
         <h1>🔥 Python Firewall Log Dashboard</h1>
         <div>
             <button class="toggle-btn" id="toggleModeBtn">🌙 Toggle Dark/Light</button>
-            <button class="dashboard-export-btn" onclick="exportDashboard('png')">Export PNG</button>
-            <button class="dashboard-export-btn" onclick="exportDashboard('pdf')">Export PDF</button>
+            <button class="dashboard-export-btn" onclick="exportDashboard('png')" title="Download PNG">
+                <span style="font-size:18px;">🖼️</span> PNG
+            </button>
+            <button class="dashboard-export-btn" onclick="exportDashboard('pdf')" title="Download PDF">
+                <span style="font-size:18px;">📄</span> PDF
+            </button>
         </div>
     </div>
 
@@ -234,24 +248,36 @@
         <div class="chart-box">
             <div class="chart-title">Protocol Distribution</div>
             <div class="chart-actions">
-                <button class="export-btn" onclick="exportChart('protocolChart', 'png')">PNG</button>
-                <button class="export-btn" onclick="exportChart('protocolChart', 'pdf')">PDF</button>
+                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'png')" title="Download PNG">
+                    🖼️
+                </button>
+                <button class="chart-download-btn" onclick="exportChart('protocolChart', 'pdf')" title="Download PDF">
+                    📄
+                </button>
             </div>
             <canvas id="protocolChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Action Summary</div>
             <div class="chart-actions">
-                <button class="export-btn" onclick="exportChart('actionChart', 'png')">PNG</button>
-                <button class="export-btn" onclick="exportChart('actionChart', 'pdf')">PDF</button>
+                <button class="chart-download-btn" onclick="exportChart('actionChart', 'png')" title="Download PNG">
+                    🖼️
+                </button>
+                <button class="chart-download-btn" onclick="exportChart('actionChart', 'pdf')" title="Download PDF">
+                    📄
+                </button>
             </div>
             <canvas id="actionChart" width="180" height="180"></canvas>
         </div>
         <div class="chart-box">
             <div class="chart-title">Top Source IPs</div>
             <div class="chart-actions">
-                <button class="export-btn" onclick="exportChart('ipChart', 'png')">PNG</button>
-                <button class="export-btn" onclick="exportChart('ipChart', 'pdf')">PDF</button>
+                <button class="chart-download-btn" onclick="exportChart('ipChart', 'png')" title="Download PNG">
+                    🖼️
+                </button>
+                <button class="chart-download-btn" onclick="exportChart('ipChart', 'pdf')" title="Download PDF">
+                    📄
+                </button>
             </div>
             <canvas id="ipChart" width="180" height="180"></canvas>
         </div>
@@ -327,13 +353,14 @@
 
     // Chart.js Options with animation and clickable legend
     function getChartOptions(title, legendDisplay=true) {
+        const isLight = document.body.classList.contains('light-mode');
         return {
             responsive: false,
             plugins: {
                 legend: {
                     display: legendDisplay,
                     labels: {
-                        color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc',
+                        color: isLight ? '#161b22' : '#f0f6fc',
                         font: { size: 13 },
                         usePointStyle: true,
                         onClick: function(e, legendItem, legend) {
@@ -357,33 +384,40 @@
             scales: title === 'Top Source IPs' ? {
                 y: {
                     beginAtZero: true,
-                    ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc', font: { size: 13 } },
-                    grid: { color: document.body.classList.contains('light-mode') ? '#d1d5da' : '#30363d' }
+                    ticks: { color: isLight ? '#161b22' : '#f0f6fc', font: { size: 13 } },
+                    grid: { color: isLight ? '#d1d5da' : '#30363d' }
                 },
                 x: {
-                    ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc', font: { size: 13 } },
-                    grid: { color: document.body.classList.contains('light-mode') ? '#d1d5da' : '#30363d' }
+                    ticks: { color: isLight ? '#161b22' : '#f0f6fc', font: { size: 13 } },
+                    grid: { color: isLight ? '#d1d5da' : '#30363d' }
                 }
             } : undefined
         };
     }
 
     // Chart instances
-    const protocolChart = new Chart(document.getElementById('protocolChart').getContext('2d'), {
-        type: 'pie',
-        data: protocolData,
-        options: getChartOptions('Protocol Distribution')
-    });
-    const actionChart = new Chart(document.getElementById('actionChart').getContext('2d'), {
-        type: 'doughnut',
-        data: actionData,
-        options: getChartOptions('Action Summary')
-    });
-    const ipChart = new Chart(document.getElementById('ipChart').getContext('2d'), {
-        type: 'bar',
-        data: ipData,
-        options: getChartOptions('Top Source IPs', false)
-    });
+    let protocolChart, actionChart, ipChart;
+    function renderCharts() {
+        if (protocolChart) protocolChart.destroy();
+        if (actionChart) actionChart.destroy();
+        if (ipChart) ipChart.destroy();
+        protocolChart = new Chart(document.getElementById('protocolChart').getContext('2d'), {
+            type: 'pie',
+            data: protocolData,
+            options: getChartOptions('Protocol Distribution')
+        });
+        actionChart = new Chart(document.getElementById('actionChart').getContext('2d'), {
+            type: 'doughnut',
+            data: actionData,
+            options: getChartOptions('Action Summary')
+        });
+        ipChart = new Chart(document.getElementById('ipChart').getContext('2d'), {
+            type: 'bar',
+            data: ipData,
+            options: getChartOptions('Top Source IPs', false)
+        });
+    }
+    renderCharts();
 
     // Export chart as PNG/PDF
     function exportChart(chartId, type) {
@@ -428,16 +462,8 @@
     // Dark mode toggle
     document.getElementById('toggleModeBtn').onclick = function() {
         document.body.classList.toggle('light-mode');
-        // Update chart legend colors
-        protocolChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
-        actionChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
-        ipChart.options.scales.x.ticks.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
-        ipChart.options.scales.y.ticks.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
-        ipChart.options.plugins.legend.labels.color = document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc';
-        protocolChart.update();
-        actionChart.update();
-        ipChart.update();
-    }
+        setTimeout(renderCharts, 100); // re-render charts for correct legend color
+    };
 </script>
 
 </body>
