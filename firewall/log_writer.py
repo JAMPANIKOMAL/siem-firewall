@@ -37,3 +37,28 @@ def fetch_all_logs():
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+
+def fetch_filtered_logs(query="", action=""):
+    conn = sqlite3.connect("logs.db")
+    cursor = conn.cursor()
+    query_like = f"%{query}%"
+    
+    sql = "SELECT * FROM logs WHERE 1=1"
+    params = []
+
+    if query:
+        sql += " AND (src_ip LIKE ? OR dst_ip LIKE ? OR protocol LIKE ?)"
+        params.extend([query_like, query_like, query_like])
+    
+    if action:
+        sql += " AND action = ?"
+        params.append(action)
+
+    sql += " ORDER BY id DESC"
+    
+    cursor.execute(sql, params)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows

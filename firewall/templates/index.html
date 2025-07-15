@@ -1,18 +1,54 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Python Firewall Dashboard</title>
     <style>
-        body { font-family: Arial; background-color: #0d1117; color: #f0f6fc; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #30363d; text-align: left; }
-        th { background-color: #161b22; }
-        tr:nth-child(even) { background-color: #1c2128; }
-        h1 { color: #58a6ff; }
+        body {
+            font-family: Arial;
+            background-color: #0d1117;
+            color: #f0f6fc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #30363d;
+            text-align: left;
+        }
+
+        th {
+            background-color: #161b22;
+        }
+
+        tr:nth-child(even) {
+            background-color: #1c2128;
+        }
+
+        h1 {
+            color: #58a6ff;
+        }
     </style>
 </head>
+
 <body>
     <h1>🔥 Python Firewall Log Dashboard</h1>
+    <form method="get">
+        <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}">
+        <select name="action">
+            <option value="">All</option>
+            <option value="ALLOWED" {% if filter_action=='ALLOWED' %}selected{% endif %}>ALLOWED</option>
+            <option value="BLOCKED" {% if filter_action=='BLOCKED' %}selected{% endif %}>BLOCKED</option>
+        </select>
+        <button type="submit">🔍 Search</button>
+    </form>
+
     <table>
         <tr>
             <th>ID</th>
@@ -36,4 +72,5 @@
         {% endfor %}
     </table>
 </body>
+
 </html>
