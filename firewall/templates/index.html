@@ -4,12 +4,12 @@
 <head>
     <title>Python Firewall Dashboard</title>
 
-    <!-- ✅ Add DataTables CSS -->
+    <!-- ✅ DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             background-color: #0d1117;
             color: #f0f6fc;
             padding: 20px;
@@ -17,18 +17,20 @@
 
         h1 {
             color: #58a6ff;
+            margin-bottom: 30px;
         }
 
-        table.dataTable thead th {
-            color: #fff;
-            background-color: #161b22;
+        .filter-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .filter-input,
         .filter-select,
         .filter-btn {
             padding: 8px 12px;
-            margin-right: 10px;
             border: 1px solid #30363d;
             border-radius: 6px;
             background-color: #161b22;
@@ -53,29 +55,26 @@
         .filter-btn:hover {
             background-color: #2ea043;
         }
+
+        table.dataTable thead th {
+            background-color: #161b22;
+            color: #ffffff;
+        }
+
+        table.dataTable tbody td {
+            color: #c9d1d9;
+        }
+
+        .dataTables_filter {
+            display: none !important; /* ❌ Hide DataTables built-in search */
+        }
     </style>
 </head>
 
-<!-- ✅ Add jQuery + DataTables -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-<script>
-    $(document).ready(function () {
-        $('#logTable').DataTable({
-            pageLength: 25,
-            order: [[0, "desc"]],
-            language: {
-                searchPlaceholder: "Search logs..."
-            }
-        });
-    });
-</script>
-
-
 <body>
     <h1>🔥 Python Firewall Log Dashboard</h1>
-    <form method="get" style="margin-bottom: 20px;">
+
+    <form method="get" class="filter-form">
         <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}" class="filter-input">
 
         <select name="action" class="filter-select">
@@ -86,7 +85,6 @@
 
         <button type="submit" class="filter-btn">🔍 Search</button>
     </form>
-
 
     <table id="logTable" class="display">
         <thead>
@@ -115,6 +113,21 @@
         </tbody>
     </table>
 
+    <!-- ✅ DataTables Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#logTable').DataTable({
+                pageLength: 25,
+                order: [[0, "desc"]],
+                language: {
+                    search: "", // Hidden
+                    searchPlaceholder: "Search logs..."
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
