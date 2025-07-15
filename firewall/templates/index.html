@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python Firewall Dashboard</title>
+    <style>
+        body { font-family: Arial; background-color: #0d1117; color: #f0f6fc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #30363d; text-align: left; }
+        th { background-color: #161b22; }
+        tr:nth-child(even) { background-color: #1c2128; }
+        h1 { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Python Firewall Log Dashboard</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Time</th>
+            <th>Source IP</th>
+            <th>Destination IP</th>
+            <th>Protocol</th>
+            <th>Action</th>
+            <th>Reason</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log[0] }}</td>
+            <td>{{ log[1] }}</td>
+            <td>{{ log[2] }}</td>
+            <td>{{ log[3] }}</td>
+            <td>{{ log[4] }}</td>
+            <td>{{ log[5] }}</td>
+            <td>{{ log[6] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

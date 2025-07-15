@@ -28,3 +28,12 @@ def log_packet(timestamp, src_ip, dst_ip, protocol, action, reason):
     ''', (timestamp, src_ip, dst_ip, protocol, action, reason))
     conn.commit()
     conn.close()
+
+
+def fetch_all_logs():
+    conn = sqlite3.connect("logs.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM logs ORDER BY id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
