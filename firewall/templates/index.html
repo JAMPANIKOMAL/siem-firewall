@@ -9,8 +9,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --bg-dark: #0d1117;
@@ -83,6 +81,7 @@
             flex-wrap: wrap;
             gap: 20px;
             justify-content: center;
+            margin-bottom: 30px;
         }
         .chart-box {
             background: var(--card-dark);
@@ -101,6 +100,20 @@
             margin-bottom: 12px;
             font-weight: 600;
             color: var(--accent);
+        }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dataTables_length select,
+        .dataTables_filter input {
+            border-radius: 12px;
+            padding: 6px 10px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         table.dataTable {
             background: var(--card-dark);
@@ -192,13 +205,11 @@
 </div>
 
 <script>
-    // Toggle theme
-    document.getElementById('toggleModeBtn').onclick = function() {
+    document.getElementById('toggleModeBtn').onclick = function () {
         document.body.classList.toggle('light-mode');
         renderCharts();
     };
 
-    // DataTable
     $(document).ready(function () {
         $('#logTable').DataTable({
             pageLength: 10
@@ -232,25 +243,60 @@
         new Chart(document.getElementById('protocolChart'), {
             type: 'pie',
             data: protocolData,
-            options: { plugins: { datalabels: { color: '#fff' } } }
+            options: {
+                responsive: true,
+                plugins: {
+                    datalabels: {
+                        color: '#fff',
+                        anchor: 'center',
+                        align: 'center'
+                    }
+                }
+            }
         });
         new Chart(document.getElementById('actionChart'), {
             type: 'doughnut',
             data: actionData,
-            options: { plugins: { datalabels: { color: '#fff' } } }
+            options: {
+                responsive: true,
+                plugins: {
+                    datalabels: {
+                        color: '#fff',
+                        anchor: 'center',
+                        align: 'center'
+                    }
+                }
+            }
         });
         new Chart(document.getElementById('ipChart'), {
             type: 'bar',
             data: ipData,
             options: {
+                responsive: true,
                 scales: {
-                    x: { ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc' } },
-                    y: { beginAtZero: true, ticks: { color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc' } }
+                    x: {
+                        ticks: {
+                            color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+                        }
+                    }
                 },
-                plugins: { datalabels: { color: '#000' } }
+                plugins: {
+                    datalabels: {
+                        color: '#000',
+                        anchor: 'end',
+                        align: 'top'
+                    }
+                }
             }
         });
     }
+
     renderCharts();
 </script>
 </body>
