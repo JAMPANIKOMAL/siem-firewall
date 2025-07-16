@@ -19,6 +19,8 @@
     border-radius: 4px;
     margin-left: 4px;
     color: white;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .tag.freq {

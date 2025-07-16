@@ -1,337 +1,368 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Firewall Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <style>
-        :root {
-            --bg-dark: #0d1117;
-            --bg-light: #ffffff;
-            --card-dark: #161b22;
-            --card-light: #f0f2f5;
-            --text-dark: #f0f6fc;
-            --text-light: #161b22;
-            --primary: #58a6ff;
-            --accent: #0366d6;
-        }
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-dark);
-            transition: background-color 0.3s, color 0.3s;
-        }
-        body.light-mode {
-            background-color: var(--bg-light);
-            color: var(--text-light);
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 2.2rem;
-            text-align: center;
-            color: var(--primary);
-            margin-bottom: 20px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .toggle-btn {
-            border: none;
-            font-size: 1.5rem;
-            background-color: transparent;
-            cursor: pointer;
-            color: var(--primary);
-        }
-        .search-bar {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .search-bar input, .search-bar select, .search-bar button {
-            padding: 10px;
-            font-size: 1rem;
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .search-bar button {
-            background: linear-gradient(145deg, #2ea043, #0366d6);
-            color: white;
-            cursor: pointer;
-        }
-        .charts-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        .chart-box {
-            background: var(--card-dark);
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            transition: background 0.3s;
-            width: 320px;
-        }
-        body.light-mode .chart-box {
-            background: var(--card-light);
-        }
-        .chart-title {
-            text-align: center;
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            font-weight: 600;
-            color: var(--accent);
-        }
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .dataTables_length select,
-        .dataTables_filter input {
-            border-radius: 12px;
-            padding: 6px 10px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        table.dataTable {
-            background: var(--card-dark);
-            color: var(--text-dark);
-            width: 100%;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        body.light-mode table.dataTable {
-            background: var(--card-light);
-            color: var(--text-light);
-        }
-        table.dataTable thead th {
-            background-color: #21262c;
-            color: white;
-        }
-        body.light-mode table.dataTable thead th {
-            background-color: #eaecef;
-            color: #161b22;
-        }
-        table.dataTable tbody td {
-            color: inherit;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Python Firewall Dashboard</title>
 
-        /* Suspicious Highlight Styles */
-        .frequent-ip {
-            background-color: rgba(255, 99, 132, 0.2) !important;
-        }
+  <!-- CDN Styles and Scripts -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-        .rare-protocol {
-            background-color: rgba(54, 162, 235, 0.2) !important;
-        }
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --bg-light: #ffffff;
+      --card-dark: #161b22;
+      --card-light: #f0f2f5;
+      --text-dark: #f0f6fc;
+      --text-light: #161b22;
+      --primary: #58a6ff;
+      --accent: #0366d6;
+    }
 
-        .repeated-blocks {
-            background-color: rgba(255, 206, 86, 0.2) !important;
-        }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+      transition: background-color 0.3s, color 0.3s;
+    }
 
-        .tag {
-            display: inline-block;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            margin-left: 4px;
-            color: white;
-        }
-        .tag.freq { background-color: #2ea043; }
-        .tag.rare { background-color: #0366d6; }
-        .tag.block { background-color: #ff9800; }
-    </style>
+    body.light-mode {
+      background-color: var(--bg-light);
+      color: var(--text-light);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+      border: none;
+      font-size: 1.5rem;
+      background: transparent;
+      cursor: pointer;
+      color: var(--primary);
+    }
+
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .search-bar input,
+    .search-bar select,
+    .search-bar button {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-bar button {
+      background: linear-gradient(145deg, #2ea043, #0366d6);
+      color: white;
+      cursor: pointer;
+    }
+
+    .charts-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .chart-box {
+      background: var(--card-dark);
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      width: 320px;
+      transition: background 0.3s;
+    }
+
+    body.light-mode .chart-box {
+      background: var(--card-light);
+    }
+
+    .chart-title {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    table.dataTable {
+      background: var(--card-dark);
+      color: var(--text-dark);
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    body.light-mode table.dataTable {
+      background: var(--card-light);
+      color: var(--text-light);
+    }
+
+    table.dataTable thead th {
+      background-color: #21262c;
+      color: white;
+    }
+
+    body.light-mode table.dataTable thead th {
+      background-color: #eaecef;
+      color: #161b22;
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dataTables_length select,
+    .dataTables_filter input {
+      border-radius: 12px;
+      padding: 6px 10px;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    table.dataTable tbody td {
+      color: inherit;
+    }
+
+    /* Suspicious Row Styles */
+    .frequent-ip {
+      background-color: rgba(255, 99, 132, 0.2) !important;
+    }
+
+    .rare-protocol {
+      background-color: rgba(54, 162, 235, 0.2) !important;
+    }
+
+    .repeated-blocks {
+      background-color: rgba(255, 206, 86, 0.2) !important;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      margin-left: 4px;
+      color: white;
+    }
+
+    .tag.freq {
+      background-color: #2ea043;
+    }
+
+    .tag.rare {
+      background-color: #0366d6;
+    }
+
+    .tag.block {
+      background-color: #ff9800;
+    }
+  </style>
 </head>
 <body>
 <div class="container">
-    <div class="top-bar">
-        <h1>🔥 Python Firewall Log Dashboard</h1>
-        <button class="toggle-btn" id="toggleModeBtn" title="Toggle Theme">🌞 / 🌙</button>
-    </div>
+  <div class="top-bar">
+    <h1>🔥 Python Firewall Log Dashboard</h1>
+    <button class="toggle-btn" id="toggleModeBtn">🌞 / 🌙</button>
+  </div>
 
-    <!-- Search bar -->
-    <div class="search-bar">
-        <form method="get">
-            <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}">
-            <select name="action">
-                <option value="">All</option>
-                <option value="ALLOWED" {% if filter_action == 'ALLOWED' %}selected{% endif %}>ALLOWED</option>
-                <option value="BLOCKED" {% if filter_action == 'BLOCKED' %}selected{% endif %}>BLOCKED</option>
-            </select>
-            <button type="submit">Search</button>
-        </form>
-    </div>
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <form method="get">
+      <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}">
+      <select name="action">
+        <option value="">All</option>
+        <option value="ALLOWED" {% if filter_action == 'ALLOWED' %}selected{% endif %}>ALLOWED</option>
+        <option value="BLOCKED" {% if filter_action == 'BLOCKED' %}selected{% endif %}>BLOCKED</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+  </div>
 
-    <!-- Charts -->
-    <div class="charts-container">
-        <div class="chart-box">
-            <div class="chart-title">Protocol Distribution</div>
-            <canvas id="protocolChart"></canvas>
-        </div>
-        <div class="chart-box">
-            <div class="chart-title">Action Summary</div>
-            <canvas id="actionChart"></canvas>
-        </div>
-        <div class="chart-box">
-            <div class="chart-title">Top Source IPs</div>
-            <canvas id="ipChart"></canvas>
-        </div>
+  <!-- Charts -->
+  <div class="charts-container">
+    <div class="chart-box">
+      <div class="chart-title">Protocol Distribution</div>
+      <canvas id="protocolChart"></canvas>
     </div>
+    <div class="chart-box">
+      <div class="chart-title">Action Summary</div>
+      <canvas id="actionChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Top Source IPs</div>
+      <canvas id="ipChart"></canvas>
+    </div>
+  </div>
 
-    <!-- Table -->
-    <table id="logTable" class="display">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Time</th>
-            <th>Source IP</th>
-            <th>Destination IP</th>
-            <th>Protocol</th>
-            <th>Action</th>
-            <th>Reason</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for log in logs %}
-            <tr class="
-                {% if log.flags.frequent_ip %}frequent-ip{% endif %}
-                {% if log.flags.rare_protocol %} rare-protocol{% endif %}
-                {% if log.flags.repeated_blocks %} repeated-blocks{% endif %}
-            ">
-                <td>{{ log.id }}</td>
-                <td>{{ log.timestamp }}</td>
-                <td>{{ log.src_ip }}</td>
-                <td>{{ log.dst_ip }}</td>
-                <td>{{ log.protocol }}</td>
-                <td>{{ log.action }}</td>
-                <td>
-                    {{ log.reason }}
-                    {% if log.flags.frequent_ip %}<span class="tag freq">Frequent IP</span>{% endif %}
-                    {% if log.flags.rare_protocol %}<span class="tag rare">Rare Protocol</span>{% endif %}
-                    {% if log.flags.repeated_blocks %}<span class="tag block">Repeated Blocks</span>{% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+  <!-- Log Table -->
+  <table id="logTable" class="display">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Time</th>
+      <th>Source IP</th>
+      <th>Destination IP</th>
+      <th>Protocol</th>
+      <th>Action</th>
+      <th>Reason</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+      <tr class="
+        {% if log.flags.frequent_ip %}frequent-ip{% endif %}
+        {% if log.flags.rare_protocol %} rare-protocol{% endif %}
+        {% if log.flags.repeated_blocks %} repeated-blocks{% endif %}
+      ">
+        <td>{{ log.id }}</td>
+        <td>{{ log.timestamp }}</td>
+        <td>{{ log.src_ip }}</td>
+        <td>{{ log.dst_ip }}</td>
+        <td>{{ log.protocol }}</td>
+        <td>{{ log.action }}</td>
+        <td>
+          {{ log.reason }}
+          {% if log.flags.frequent_ip %}<span class="tag freq">Frequent IP</span>{% endif %}
+          {% if log.flags.rare_protocol %}<span class="tag rare">Rare Protocol</span>{% endif %}
+          {% if log.flags.repeated_blocks %}<span class="tag block">Repeated Blocks</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 <script>
-    document.getElementById('toggleModeBtn').onclick = function () {
-        document.body.classList.toggle('light-mode');
-        renderCharts();
-    };
-
-    $(document).ready(function () {
-        $('#logTable').DataTable({
-            pageLength: 10
-        });
-    });
-
-    const protocolData = {
-        labels: {{ protocols | map(attribute=0) | list | tojson | safe }},
-        datasets: [{
-            data: {{ protocols | map(attribute=1) | list | tojson | safe }},
-            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56']
-        }]
-    };
-    const actionData = {
-        labels: {{ actions | map(attribute=0) | list | tojson | safe }},
-        datasets: [{
-            data: {{ actions | map(attribute=1) | list | tojson | safe }},
-            backgroundColor: ['#2ea043', '#d73a49']
-        }]
-    };
-    const ipData = {
-        labels: {{ top_ips | map(attribute=0) | list | tojson | safe }},
-        datasets: [{
-            label: 'Packets',
-            data: {{ top_ips | map(attribute=1) | list | tojson | safe }},
-            backgroundColor: '#58a6ff'
-        }]
-    };
-
-    function renderCharts() {
-        new Chart(document.getElementById('protocolChart'), {
-            type: 'pie',
-            data: protocolData,
-            options: {
-                responsive: true,
-                plugins: {
-                    datalabels: {
-                        color: '#fff',
-                        anchor: 'center',
-                        align: 'center'
-                    }
-                }
-            }
-        });
-        new Chart(document.getElementById('actionChart'), {
-            type: 'doughnut',
-            data: actionData,
-            options: {
-                responsive: true,
-                plugins: {
-                    datalabels: {
-                        color: '#fff',
-                        anchor: 'center',
-                        align: 'center'
-                    }
-                }
-            }
-        });
-        new Chart(document.getElementById('ipChart'), {
-            type: 'bar',
-            data: ipData,
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        ticks: {
-                            color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
-                        }
-                    }
-                },
-                plugins: {
-                    datalabels: {
-                        color: '#000',
-                        anchor: 'end',
-                        align: 'top'
-                    }
-                }
-            }
-        });
-    }
-
+  document.getElementById('toggleModeBtn').onclick = function () {
+    document.body.classList.toggle('light-mode');
     renderCharts();
+  };
+
+  $(document).ready(function () {
+    $('#logTable').DataTable({
+      pageLength: 10
+    });
+  });
+
+  const protocolData = {
+    labels: {{ protocols | map(attribute=0) | list | tojson | safe }},
+    datasets: [{
+      data: {{ protocols | map(attribute=1) | list | tojson | safe }},
+      backgroundColor: ['#ff6384', '#36a2eb', '#ffce56']
+    }]
+  };
+  const actionData = {
+    labels: {{ actions | map(attribute=0) | list | tojson | safe }},
+    datasets: [{
+      data: {{ actions | map(attribute=1) | list | tojson | safe }},
+      backgroundColor: ['#2ea043', '#d73a49']
+    }]
+  };
+  const ipData = {
+    labels: {{ top_ips | map(attribute=0) | list | tojson | safe }},
+    datasets: [{
+      label: 'Packets',
+      data: {{ top_ips | map(attribute=1) | list | tojson | safe }},
+      backgroundColor: '#58a6ff'
+    }]
+  };
+
+  function renderCharts() {
+    new Chart(document.getElementById('protocolChart'), {
+      type: 'pie',
+      data: protocolData,
+      options: {
+        responsive: true,
+        plugins: {
+          datalabels: {
+            color: '#fff',
+            anchor: 'center',
+            align: 'center'
+          }
+        }
+      }
+    });
+    new Chart(document.getElementById('actionChart'), {
+      type: 'doughnut',
+      data: actionData,
+      options: {
+        responsive: true,
+        plugins: {
+          datalabels: {
+            color: '#fff',
+            anchor: 'center',
+            align: 'center'
+          }
+        }
+      }
+    });
+    new Chart(document.getElementById('ipChart'), {
+      type: 'bar',
+      data: ipData,
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            ticks: {
+              color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+            }
+          }
+        },
+        plugins: {
+          datalabels: {
+            color: '#000',
+            anchor: 'end',
+            align: 'top'
+          }
+        }
+      }
+    });
+  }
+
+  renderCharts();
 </script>
 </body>
 </html>

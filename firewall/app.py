@@ -11,20 +11,20 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index():
-    # Get query parameters
+    # 🔍 Search & Filter Parameters
     query = request.args.get("query", "").strip()
     filter_action = request.args.get("action", "")
 
-    # Fetch filtered logs (returned as tuples)
+    # 🧾 Fetch Logs
     logs = fetch_filtered_logs(query, filter_action)
 
-    # Load smart detection flags
+    # 🧠 Smart Detection
     suspicious_flags = detect_suspicious_logs()
 
-    # Annotate logs with detection flags (convert to dicts)
+    # 🧩 Merge flags into logs
     enhanced_logs = []
     for log in logs:
-        log_id = log[0]  # ID is first element of tuple
+        log_id = log[0]
         flags = suspicious_flags.get(log_id, {
             "frequent_ip": False,
             "rare_protocol": False,
@@ -41,12 +41,12 @@ def index():
             "flags": flags
         })
 
-    # Dashboard stats
+    # 📊 Chart Data
     protocols = get_protocol_stats()
     actions = get_action_stats()
     top_ips = get_top_source_ips()
 
-    # Render HTML with all data
+    # 🎯 Render Template
     return render_template(
         "index.html",
         logs=enhanced_logs,

@@ -17,11 +17,15 @@ def load_thresholds():
         return {}
 
 def detect_suspicious_logs():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, src_ip, protocol, action FROM logs")
-    rows = cursor.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, src_ip, protocol, action FROM logs")
+        rows = cursor.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"[DB ERROR] {e}")
+        return {}
 
     thresholds = load_thresholds()
     freq_thresh = thresholds.get("frequent_ip_threshold", 5)
@@ -32,25 +36,27 @@ def detect_suspicious_logs():
     ip_counter = Counter()
     block_counter = Counter()
     protocol_counter = Counter()
-
     log_map = {}
+
+    # First pass: count frequencies
     for log_id, src_ip, protocol, action in rows:
         ip_counter[src_ip] += 1
         protocol_counter[protocol] += 1
         if action.upper() == "BLOCK":
             block_counter[src_ip] += 1
-
         log_map[log_id] = {
             "frequent_ip": False,
             "rare_protocol": False,
             "repeated_blocks": False
         }
 
+    # Detect rare protocols
     rare_protocols = {
         proto for proto, count in protocol_counter.items()
-        if (count / total_logs * 100) < rare_thresh
+        if total_logs > 0 and (count / total_logs * 100) < rare_thresh
     }
 
+    # Second pass: flag suspicious logs
     for log_id, src_ip, protocol, action in rows:
         flags = log_map[log_id]
         if ip_counter[src_ip] >= freq_thresh:
