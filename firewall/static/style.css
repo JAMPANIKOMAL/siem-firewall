@@ -1,17 +1,165 @@
-/* === Detection Highlight Styles === */
+/* === Root Theme Variables === */
+:root {
+    --bg-dark: #0d1117;
+    --bg-light: #ffffff;
+    --card-dark: #161b22;
+    --card-light: #f0f2f5;
+    --text-dark: #f0f6fc;
+    --text-light: #161b22;
+    --primary: #58a6ff;
+    --accent: #0366d6;
+}
 
-.frequent-ip {
+/* === Base Styles === */
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+    transition: background-color 0.3s, color 0.3s;
+}
+body.light-mode {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+}
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+h1 {
+    font-size: 2.2rem;
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.toggle-btn {
+    border: none;
+    font-size: 1.5rem;
+    background-color: transparent;
+    cursor: pointer;
+    color: var(--primary);
+}
+
+/* === Search Bar === */
+.search-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+.search-bar input,
+.search-bar select,
+.search-bar button {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.search-bar button {
+    background: linear-gradient(145deg, #2ea043, #0366d6);
+    color: white;
+    cursor: pointer;
+}
+
+/* === Chart Containers === */
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+.chart-box {
+    background: var(--card-dark);
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s;
+    width: 320px;
+}
+body.light-mode .chart-box {
+    background: var(--card-light);
+}
+.chart-title {
+    text-align: center;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+/* === DataTable Styling === */
+table.dataTable {
+    background: var(--card-dark);
+    color: var(--text-dark);
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+body.light-mode table.dataTable {
+    background: var(--card-light);
+    color: var(--text-light);
+}
+table.dataTable thead th {
+    background-color: #21262c;
+    color: white;
+}
+body.light-mode table.dataTable thead th {
+    background-color: #eaecef;
+    color: #161b22;
+}
+table.dataTable tbody td {
+    color: inherit;
+}
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.dataTables_length select,
+.dataTables_filter input {
+    border-radius: 12px;
+    padding: 6px 10px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* === Detection Highlight Styles === */
+body:not(.light-mode) .frequent-ip {
     background-color: rgba(255, 99, 132, 0.2) !important;
 }
+body.light-mode .frequent-ip {
+    background-color: rgba(255, 99, 132, 0.4) !important;
+}
 
-.rare-protocol {
+body:not(.light-mode) .rare-protocol {
     background-color: rgba(54, 162, 235, 0.2) !important;
 }
-
-.repeated-blocks {
-    background-color: rgba(255, 206, 86, 0.2) !important;
+body.light-mode .rare-protocol {
+    background-color: rgba(54, 162, 235, 0.4) !important;
 }
 
+body:not(.light-mode) .repeated-blocks {
+    background-color: rgba(255, 206, 86, 0.2) !important;
+}
+body.light-mode .repeated-blocks {
+    background-color: rgba(255, 206, 86, 0.4) !important;
+}
+
+/* === Tags (badges) === */
 .tag {
     display: inline-block;
     padding: 2px 6px;
@@ -22,15 +170,15 @@
     font-weight: 600;
     letter-spacing: 0.5px;
 }
-
 .tag.freq {
-    background-color: #2ea043; /* green */
+    background-color: #2ea043;
 }
-
 .tag.rare {
-    background-color: #0366d6; /* blue */
+    background-color: #0366d6;
 }
-
 .tag.block {
-    background-color: #ff9800; /* orange */
+    background-color: #ff9800;
+}
+body.light-mode .tag {
+    color: white;
 }

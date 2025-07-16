@@ -58,11 +58,14 @@
     }
 
     .toggle-btn {
+      font-size: 1.1rem;
+      padding: 8px 16px;
+      background: linear-gradient(to right, #0366d6, #2ea043);
       border: none;
-      font-size: 1.5rem;
-      background: transparent;
+      border-radius: 20px;
+      color: white;
       cursor: pointer;
-      color: var(--primary);
+      transition: background 0.3s;
     }
 
     .search-bar {
@@ -117,6 +120,15 @@
       color: var(--accent);
     }
 
+    .legend-box {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .legend-box .tag {
+      margin: 0 6px 6px 0;
+    }
+
     table.dataTable {
       background: var(--card-dark);
       color: var(--text-dark);
@@ -161,37 +173,31 @@
     }
 
     /* Suspicious Row Styles */
-    .frequent-ip {
-      background-color: rgba(255, 99, 132, 0.2) !important;
-    }
+    body:not(.light-mode) .frequent-ip { background-color: rgba(255, 99, 132, 0.2) !important; }
+    body.light-mode .frequent-ip { background-color: rgba(255, 99, 132, 0.4) !important; }
 
-    .rare-protocol {
-      background-color: rgba(54, 162, 235, 0.2) !important;
-    }
+    body:not(.light-mode) .rare-protocol { background-color: rgba(54, 162, 235, 0.2) !important; }
+    body.light-mode .rare-protocol { background-color: rgba(54, 162, 235, 0.4) !important; }
 
-    .repeated-blocks {
-      background-color: rgba(255, 206, 86, 0.2) !important;
-    }
+    body:not(.light-mode) .repeated-blocks { background-color: rgba(255, 206, 86, 0.2) !important; }
+    body.light-mode .repeated-blocks { background-color: rgba(255, 206, 86, 0.4) !important; }
 
     .tag {
       display: inline-block;
       padding: 2px 6px;
       font-size: 0.75rem;
       border-radius: 4px;
-      margin-left: 4px;
       color: white;
+      font-weight: 600;
+      margin: 2px;
     }
 
-    .tag.freq {
-      background-color: #2ea043;
-    }
+    .tag.freq { background-color: #2ea043; }
+    .tag.rare { background-color: #0366d6; }
+    .tag.block { background-color: #ff9800; }
 
-    .tag.rare {
-      background-color: #0366d6;
-    }
-
-    .tag.block {
-      background-color: #ff9800;
+    body.light-mode .tag {
+      color: white;
     }
   </style>
 </head>
@@ -199,7 +205,7 @@
 <div class="container">
   <div class="top-bar">
     <h1>🔥 Python Firewall Log Dashboard</h1>
-    <button class="toggle-btn" id="toggleModeBtn">🌞 / 🌙</button>
+    <button class="toggle-btn" id="toggleModeBtn">🌞 Toggle Theme 🌙</button>
   </div>
 
   <!-- Search Bar -->
@@ -213,6 +219,13 @@
       </select>
       <button type="submit">Search</button>
     </form>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-box">
+    <span class="tag freq">Frequent IP</span>
+    <span class="tag rare">Rare Protocol</span>
+    <span class="tag block">Repeated Blocks</span>
   </div>
 
   <!-- Charts -->
@@ -242,6 +255,7 @@
       <th>Protocol</th>
       <th>Action</th>
       <th>Reason</th>
+      <th>Flags</th>
     </tr>
     </thead>
     <tbody>
@@ -257,8 +271,8 @@
         <td>{{ log.dst_ip }}</td>
         <td>{{ log.protocol }}</td>
         <td>{{ log.action }}</td>
+        <td>{{ log.reason }}</td>
         <td>
-          {{ log.reason }}
           {% if log.flags.frequent_ip %}<span class="tag freq">Frequent IP</span>{% endif %}
           {% if log.flags.rare_protocol %}<span class="tag rare">Rare Protocol</span>{% endif %}
           {% if log.flags.repeated_blocks %}<span class="tag block">Repeated Blocks</span>{% endif %}
@@ -276,9 +290,7 @@
   };
 
   $(document).ready(function () {
-    $('#logTable').DataTable({
-      pageLength: 10
-    });
+    $('#logTable').DataTable({ pageLength: 10 });
   });
 
   const protocolData = {
