@@ -66,6 +66,21 @@
     input:checked + .slider:before {
       transform: translateX(20px);
     }
+
+    .legend-box {
+      text-align: left;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+    .legend-box span {
+      margin-right: 10px;
+    }
+    .legend-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -145,7 +160,8 @@
     </tbody>
   </table>
 
-  <div class="legend-box" style="text-align: right; margin-top: 10px;">
+  <div class="legend-box">
+    <span class="legend-label">Legend:</span>
     <span class="tag freq">Frequent IP</span>
     <span class="tag rare">Rare Protocol</span>
     <span class="tag block">Repeated Blocks</span>
@@ -193,7 +209,7 @@
         responsive: true,
         plugins: {
           datalabels: {
-            color: '#fff',
+            color: '#333',
             anchor: 'center',
             align: 'center'
           }
@@ -207,7 +223,7 @@
         responsive: true,
         plugins: {
           datalabels: {
-            color: '#fff',
+            color: '#333',
             anchor: 'center',
             align: 'center'
           }
@@ -222,19 +238,19 @@
         scales: {
           x: {
             ticks: {
-              color: document.body.classList.contains('light-mode') ? '#000' : '#f0f6fc'
+              color: document.body.classList.contains('light-mode') ? '#111' : '#f0f6fc'
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: document.body.classList.contains('light-mode') ? '#000' : '#f0f6fc'
+              color: document.body.classList.contains('light-mode') ? '#111' : '#f0f6fc'
             }
           }
         },
         plugins: {
           datalabels: {
-            color: '#000',
+            color: '#001',
             anchor: 'end',
             align: 'top'
           }
