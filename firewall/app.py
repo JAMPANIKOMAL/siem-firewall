@@ -6,22 +6,41 @@ from log_writer import (
     get_top_source_ips
 )
 from detector import detect_suspicious_logs
+from threading import Thread
+from scapy.all import sniff
+from firewall import handle_packet
 
 app = Flask(__name__)
+logging_thread = None
+logging_active = False
+
+def start_sniffer():
+    global logging_active
+    sniff(filter="ip", prn=handle_packet, store=0, stop_filter=lambda x: not logging_active)
+
+@app.route("/start-logging", methods=["POST"])
+def start_logging():
+    global logging_thread, logging_active
+    if not logging_active:
+        logging_active = True
+        logging_thread = Thread(target=start_sniffer, daemon=True)
+        logging_thread.start()
+        return "Firewall logging started"
+    return "Already running"
+
+@app.route("/stop-logging", methods=["POST"])
+def stop_logging():
+    global logging_active
+    logging_active = False
+    return "Firewall logging stopped"
 
 @app.route("/", methods=["GET"])
 def index():
-    # 🔍 Search & Filter Parameters
     query = request.args.get("query", "").strip()
     filter_action = request.args.get("action", "")
-
-    # 🧾 Fetch Logs
     logs = fetch_filtered_logs(query, filter_action)
 
-    # 🧠 Smart Detection
     suspicious_flags = detect_suspicious_logs()
-
-    # 🧩 Merge flags into logs
     enhanced_logs = []
     for log in logs:
         log_id = log[0]
@@ -41,20 +60,14 @@ def index():
             "flags": flags
         })
 
-    # 📊 Chart Data
-    protocols = get_protocol_stats()
-    actions = get_action_stats()
-    top_ips = get_top_source_ips()
-
-    # 🎯 Render Template
     return render_template(
         "index.html",
         logs=enhanced_logs,
         query=query,
         filter_action=filter_action,
-        protocols=protocols,
-        actions=actions,
-        top_ips=top_ips
+        protocols=get_protocol_stats(),
+        actions=get_action_stats(),
+        top_ips=get_top_source_ips()
     )
 
 if __name__ == "__main__":

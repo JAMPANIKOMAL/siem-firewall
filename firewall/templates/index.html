@@ -81,6 +81,27 @@
       font-weight: 600;
       color: var(--accent);
     }
+
+    .control-panel {
+      text-align: center;
+      margin: 10px 0 25px;
+    }
+    .control-panel button {
+      margin: 0 6px;
+      padding: 6px 16px;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-start {
+      background: #2ea043;
+      color: white;
+    }
+    .btn-stop {
+      background: #d73a49;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -95,6 +116,11 @@
       </label>
       <span>Dark</span>
     </div>
+  </div>
+
+  <div class="control-panel">
+    <button onclick="startLogging()" class="btn-start">▶️ Start Logging</button>
+    <button onclick="stopLogging()" class="btn-stop">⏹️ Stop Logging</button>
   </div>
 
   <div class="search-bar">
@@ -169,6 +195,15 @@
 </div>
 
 <script>
+  function startLogging() {
+    fetch("/start-logging", { method: "POST" })
+      .then(r => r.text()).then(alert);
+  }
+  function stopLogging() {
+    fetch("/stop-logging", { method: "POST" })
+      .then(r => r.text()).then(alert);
+  }
+
   document.getElementById('toggleModeBtn').onchange = function () {
     document.body.classList.toggle('light-mode');
     renderCharts();
@@ -250,7 +285,7 @@
         },
         plugins: {
           datalabels: {
-            color: '#001',
+            color: '#000',
             anchor: 'end',
             align: 'top'
           }

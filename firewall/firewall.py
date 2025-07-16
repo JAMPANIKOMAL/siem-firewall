@@ -1,44 +1,39 @@
+# firewall.py
+
 import json
 from datetime import datetime
 from scapy.all import sniff, IP, TCP, UDP, ICMP
 import subprocess
 from log_writer import log_packet, init_db
 
-# ✅ Initialize the logs.db table
+# ✅ Initialize database
 init_db()
 
-# 🔒 Function to block IP using iptables
+# 🔒 Block an IP with iptables if not already blocked
 def block_ip(ip):
     try:
-        # Check if rule already exists
         subprocess.run(["iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"], check=True)
     except subprocess.CalledProcessError:
-        # Rule doesn't exist, add it
         subprocess.run(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
-        print(f"🔒 IP {ip} has been blocked via iptables.")
+        print(f"🔒 Blocked IP: {ip}")
 
 # 📜 Load firewall rules from rules.json
 def load_rules():
     with open("rules.json", "r") as f:
         return json.load(f)
 
-# 🔍 Check if a packet matches any block rules
+# 🔍 Check packet against rules
 def packet_matches_rules(packet, rules):
-    proto = None
+    proto, port = None, None
     src_ip = packet[IP].src
     dst_ip = packet[IP].dst
 
     if TCP in packet:
-        proto = "TCP"
-        port = packet[TCP].dport
+        proto, port = "TCP", packet[TCP].dport
     elif UDP in packet:
-        proto = "UDP"
-        port = packet[UDP].dport
+        proto, port = "UDP", packet[UDP].dport
     elif ICMP in packet:
         proto = "ICMP"
-        port = None
-    else:
-        return False, "UNKNOWN"
 
     if src_ip in rules["blocked_ips"]:
         return True, f"Blocked IP {src_ip}"
@@ -49,26 +44,23 @@ def packet_matches_rules(packet, rules):
 
     return False, "Allowed"
 
-# 🔄 Process each packet captured by sniff()
+# 🔄 Packet handler
 def handle_packet(packet):
     if IP in packet:
         rules = load_rules()
         blocked, reason = packet_matches_rules(packet, rules)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        src_ip = packet[IP].src
-        dst_ip = packet[IP].dst
-        proto = "ICMP"
-        if TCP in packet: proto = "TCP"
-        elif UDP in packet: proto = "UDP"
-
+        src_ip, dst_ip = packet[IP].src, packet[IP].dst
+        proto = "ICMP" if ICMP in packet else "TCP" if TCP in packet else "UDP"
         action = "BLOCKED" if blocked else "ALLOWED"
 
         if blocked:
-            block_ip(src_ip)  # 🔥 Real-time blocking via iptables
+            block_ip(src_ip)
 
         log_packet(timestamp, src_ip, dst_ip, proto, action, reason)
         print(f"[{action}] {timestamp} {src_ip} → {dst_ip} [{proto}] — {reason}")
 
-# 🚀 Start packet sniffing
-print("🔒 Starting Python Firewall... Press Ctrl+C to stop.")
-sniff(filter="ip", prn=handle_packet, store=0)
+# 🔥 Entry point (manual mode only)
+if __name__ == "__main__":
+    print("🔒 Starting Python Firewall (manual mode)... Ctrl+C to stop.")
+    sniff(filter="ip", prn=handle_packet, store=0)
