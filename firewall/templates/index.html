@@ -17,15 +17,16 @@
     .toggle-switch {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       font-weight: 600;
+      font-size: 0.9rem;
     }
 
     .switch {
       position: relative;
       display: inline-block;
-      width: 60px;
-      height: 32px;
+      width: 45px;
+      height: 24px;
     }
 
     .switch input {
@@ -43,14 +44,14 @@
       bottom: 0;
       background-color: #ccc;
       transition: .4s;
-      border-radius: 32px;
+      border-radius: 24px;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 24px;
-      width: 24px;
+      height: 16px;
+      width: 16px;
       left: 4px;
       bottom: 4px;
       background-color: white;
@@ -63,7 +64,7 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(28px);
+      transform: translateX(20px);
     }
   </style>
 </head>
@@ -108,12 +109,6 @@
     </div>
   </div>
 
-  <div class="legend-box" style="text-align: center; margin-bottom: 20px;">
-    <span class="tag freq">Frequent IP</span>
-    <span class="tag rare">Rare Protocol</span>
-    <span class="tag block">Repeated Blocks</span>
-  </div>
-
   <table id="logTable" class="display">
     <thead>
     <tr>
@@ -149,6 +144,12 @@
     {% endfor %}
     </tbody>
   </table>
+
+  <div class="legend-box" style="text-align: right; margin-top: 10px;">
+    <span class="tag freq">Frequent IP</span>
+    <span class="tag rare">Rare Protocol</span>
+    <span class="tag block">Repeated Blocks</span>
+  </div>
 </div>
 
 <script>
@@ -221,13 +222,13 @@
         scales: {
           x: {
             ticks: {
-              color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+              color: document.body.classList.contains('light-mode') ? '#000' : '#f0f6fc'
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: document.body.classList.contains('light-mode') ? '#161b22' : '#f0f6fc'
+              color: document.body.classList.contains('light-mode') ? '#000' : '#f0f6fc'
             }
           }
         },
