@@ -1,0 +1,34 @@
+/* === Detection Highlight Styles === */
+
+.frequent-ip {
+    background-color: rgba(255, 99, 132, 0.2) !important;
+}
+
+.rare-protocol {
+    background-color: rgba(54, 162, 235, 0.2) !important;
+}
+
+.repeated-blocks {
+    background-color: rgba(255, 206, 86, 0.2) !important;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    margin-left: 4px;
+    color: white;
+}
+
+.tag.freq {
+    background-color: #2ea043; /* green */
+}
+
+.tag.rare {
+    background-color: #0366d6; /* blue */
+}
+
+.tag.block {
+    background-color: #ff9800; /* orange */
+}

@@ -137,6 +137,31 @@
         table.dataTable tbody td {
             color: inherit;
         }
+
+        /* Suspicious Highlight Styles */
+        .frequent-ip {
+            background-color: rgba(255, 99, 132, 0.2) !important;
+        }
+
+        .rare-protocol {
+            background-color: rgba(54, 162, 235, 0.2) !important;
+        }
+
+        .repeated-blocks {
+            background-color: rgba(255, 206, 86, 0.2) !important;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            margin-left: 4px;
+            color: white;
+        }
+        .tag.freq { background-color: #2ea043; }
+        .tag.rare { background-color: #0366d6; }
+        .tag.block { background-color: #ff9800; }
     </style>
 </head>
 <body>
@@ -146,7 +171,7 @@
         <button class="toggle-btn" id="toggleModeBtn" title="Toggle Theme">🌞 / 🌙</button>
     </div>
 
-    <!-- Improved search bar -->
+    <!-- Search bar -->
     <div class="search-bar">
         <form method="get">
             <input type="text" name="query" placeholder="Search IP or Protocol" value="{{ query }}">
@@ -190,14 +215,23 @@
         </thead>
         <tbody>
         {% for log in logs %}
-            <tr>
-                <td>{{ log[0] }}</td>
-                <td>{{ log[1] }}</td>
-                <td>{{ log[2] }}</td>
-                <td>{{ log[3] }}</td>
-                <td>{{ log[4] }}</td>
-                <td>{{ log[5] }}</td>
-                <td>{{ log[6] }}</td>
+            <tr class="
+                {% if log.flags.frequent_ip %}frequent-ip{% endif %}
+                {% if log.flags.rare_protocol %} rare-protocol{% endif %}
+                {% if log.flags.repeated_blocks %} repeated-blocks{% endif %}
+            ">
+                <td>{{ log.id }}</td>
+                <td>{{ log.timestamp }}</td>
+                <td>{{ log.src_ip }}</td>
+                <td>{{ log.dst_ip }}</td>
+                <td>{{ log.protocol }}</td>
+                <td>{{ log.action }}</td>
+                <td>
+                    {{ log.reason }}
+                    {% if log.flags.frequent_ip %}<span class="tag freq">Frequent IP</span>{% endif %}
+                    {% if log.flags.rare_protocol %}<span class="tag rare">Rare Protocol</span>{% endif %}
+                    {% if log.flags.repeated_blocks %}<span class="tag block">Repeated Blocks</span>{% endif %}
+                </td>
             </tr>
         {% endfor %}
         </tbody>
