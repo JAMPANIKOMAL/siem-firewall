@@ -30,6 +30,7 @@
             <div class="controls">
                 <button id="startBtn">▶️ Start Logging</button>
                 <button id="stopBtn" disabled>⏹️ Stop Logging</button>
+                <button id="clearBtn" class="btn-clear">🗑️ Clear Logs</button>
                 <a href="/save-logs" class="btn-save">💾 Save Logs</a>
             </div>
         </div>
@@ -65,43 +66,25 @@
 
 <script>
     $(document).ready(function () {
-        // --- Globals ---
         let charts = {};
         const socket = io();
-
-        // --- Initializers ---
-        const initializeDataTable = () => {
-            return $('#logTable').DataTable({ "order": [[0, "desc"]], "pageLength": 10 });
-        };
+        const table = $('#logTable').DataTable({ "order": [[0, "desc"]], "pageLength": 10 });
 
         const initializeCharts = () => {
-            const placeholderOptions = (title) => ({
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: title, font: { size: 16 } },
-                    legend: { display: true },
-                    tooltip: { enabled: false }
-                },
-                animation: { duration: 0 }
-            });
-
-            const placeholderData = {
-                labels: ['Awaiting Data'],
-                datasets: [{ data: [1], backgroundColor: ['#30363d'], label: 'Awaiting Data' }]
-            };
-
-            charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: placeholderData, options: placeholderOptions('Protocol Distribution') });
-            charts.action = new Chart($('#actionChart'), { type: 'pie', data: placeholderData, options: placeholderOptions('Action Summary') });
+            const placeholderOptions = (title) => ({ responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: title, font: { size: 16 } }, legend: { display: true }, tooltip: { enabled: false } }, animation: { duration: 0 } });
+            const placeholderData = { labels: ['Awaiting Data'], datasets: [{ data: [1], backgroundColor: ['#30363d'], label: 'Awaiting Data' }] };
+            if(charts.protocol) charts.protocol.destroy();
+            if(charts.action) charts.action.destroy();
+            if(charts.ip) charts.ip.destroy();
+            charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: { ...placeholderData }, options: placeholderOptions('Protocol Distribution') });
+            charts.action = new Chart($('#actionChart'), { type: 'pie', data: { ...placeholderData }, options: placeholderOptions('Action Summary') });
             charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: placeholderOptions('Top Source IPs') });
             updateChartColors();
         };
 
-        // --- WebSocket Event Handlers ---
         socket.on('connect', () => console.log('WebSocket Connected.'));
 
         socket.on('new_log', (log) => {
-            const table = $('#logTable').DataTable();
             const rowNode = table.row.add([
                 log.id, log.timestamp, log.src_ip, log.dst_ip, log.protocol,
                 `<span class="action-${log.action.toLowerCase()}">${log.action}</span>`,
@@ -110,49 +93,60 @@
             $(rowNode).addClass('new-row-animation');
         });
 
-        socket.on('stats_update', (stats) => {
-            updateChartData(charts.protocol, stats.protocols);
-            updateChartData(charts.action, stats.actions);
-            updateChartData(charts.ip, stats.top_ips);
+        socket.on('stats_update', (stats) => updateAllCharts(stats));
+
+        socket.on('logs_cleared', () => {
+            console.log('Server confirmed logs cleared. Updating UI.');
+            table.clear().draw();
+            initializeCharts();
+            $('#startBtn').prop('disabled', false);
+            $('#stopBtn').prop('disabled', true);
+            $('#dashboardTitle').html('🔴 Live Firewall Dashboard');
         });
 
-        // --- UI Event Handlers ---
-        $('#startBtn').on('click', function() {
+        $('#startBtn').on('click', () => {
             socket.emit('start_logging');
-            console.log("Client emitted: start_logging");
-            $(this).prop('disabled', true);
-            $('#stopBtn').prop('disabled', false);
+            $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🟢 Live Firewall Dashboard');
         });
 
-        $('#stopBtn').on('click', function() {
+        $('#stopBtn').on('click', () => {
             socket.emit('stop_logging');
-            console.log("Client emitted: stop_logging");
-            $(this).prop('disabled', true);
-            $('#startBtn').prop('disabled', false);
+            $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🔴 Live Firewall Dashboard');
         });
         
-        $('#themeToggle').on('change', function() {
+        $('#clearBtn').on('click', () => {
+            if (confirm('Are you sure you want to delete all logs for this session? This action cannot be undone.')) {
+                socket.emit('clear_logs');
+            }
+        });
+
+        $('#themeToggle').on('change', () => {
             $('body').toggleClass('dark-mode light-mode');
             localStorage.setItem('theme', $('body').hasClass('dark-mode') ? 'dark' : 'light');
             updateChartColors();
         });
 
-        // --- Helper Functions ---
+        const updateAllCharts = (stats) => {
+            updateChartData(charts.protocol, stats.protocols);
+            updateChartData(charts.action, stats.actions);
+            updateChartData(charts.ip, stats.top_ips);
+        };
+
         const updateChartData = (chart, data) => {
             chart.options.animation.duration = 500;
             chart.options.plugins.tooltip.enabled = true;
-            chart.data.labels = data.map(d => d[0]);
+            chart.data.labels = data.map(d => d[0] || 'Unknown');
             chart.data.datasets[0].data = data.map(d => d[1]);
             chart.data.datasets[0].backgroundColor = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
             chart.update();
         };
         
         const updateChartColors = () => {
-            const isDarkMode = $('body').hasClass('dark-mode');
-            const textColor = isDarkMode ? '#e6edf3' : '#24292f';
+            const textColor = $('body').hasClass('dark-mode') ? '#e6edf3' : '#24292f';
             Object.values(charts).forEach(chart => {
+                if (!chart) return;
                 chart.options.plugins.title.color = textColor;
                 chart.options.plugins.legend.labels.color = textColor;
                 if (chart.options.scales) {
@@ -162,16 +156,11 @@
                 chart.update();
             });
         };
-
-        // --- Load Theme and Initialize ---
+        
         if (localStorage.getItem('theme') === 'light') {
-            $('#themeToggle').prop('checked', false);
-            $('body').removeClass('dark-mode').addClass('light-mode');
-        } else {
-            $('#themeToggle').prop('checked', true);
+            $('#themeToggle').prop('checked', false).trigger('change');
         }
         
-        initializeDataTable();
         initializeCharts();
     });
 </script>

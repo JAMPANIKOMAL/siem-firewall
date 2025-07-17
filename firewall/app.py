@@ -78,6 +78,23 @@ def handle_stop_logging():
     global sniffer_thread
     sniffer_thread = None
     print("Logging stopped.")
+    
+@socketio.on('clear_logs')
+def handle_clear_logs():
+    """Handles request to clear logs from the database and UI."""
+    global sniffer_thread
+    # Stop the sniffer if it's running to prevent issues
+    if sniffer_thread and sniffer_thread.is_alive():
+        stop_sniffer_event.set()
+        sniffer_thread.join() # Wait for thread to finish
+        sniffer_thread = None
+        print("Logging stopped to clear database.")
+        
+    reset_database()
+    print("Database has been cleared.")
+    
+    # Notify the client that logs are cleared so it can update the UI
+    socketio.emit('logs_cleared')
 
 @app.route('/save-logs')
 def save_logs():
