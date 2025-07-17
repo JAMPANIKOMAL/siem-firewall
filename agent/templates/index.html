@@ -28,7 +28,6 @@
                 <span>Dark</span>
             </div>
             
-            <!-- NEW: Interface Selection Dropdown -->
             <div class="interface-selector">
                 <label for="interfaceSelect">Scan Target:</label>
                 <select id="interfaceSelect">
@@ -40,6 +39,7 @@
             </div>
 
             <div class="controls">
+                <button id="rulesBtn">⚙️ Manage Rules</button>
                 <button id="startBtn">▶️ Start Logging</button>
                 <button id="stopBtn" disabled>⏹️ Stop Logging</button>
                 <button id="clearBtn" class="btn-clear">🗑️ Clear Logs</button>
@@ -70,6 +70,43 @@
         </tbody>
     </table>
 </div>
+
+<!-- Rules Modal -->
+<div id="rulesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Firewall Rules</h2>
+            <span class="close-button">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="rule-section">
+                <h3>Blocked IPs</h3>
+                <div id="blocked-ips-list" class="rule-list"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="new-ip-input" placeholder="Enter IP address">
+                    <button class="add-btn" data-type="blocked_ips" data-input="new-ip-input">+</button>
+                </div>
+            </div>
+            <div class="rule-section">
+                <h3>Blocked Ports</h3>
+                <div id="blocked-ports-list" class="rule-list"></div>
+                <div class="add-rule-form">
+                    <input type="number" id="new-port-input" placeholder="Enter port number">
+                    <button class="add-btn" data-type="blocked_ports" data-input="new-port-input">+</button>
+                </div>
+            </div>
+            <div class="rule-section">
+                <h3>Blocked Protocols</h3>
+                <div id="blocked-protocols-list" class="rule-list"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="new-protocol-input" placeholder="e.g., TCP, UDP, ICMP">
+                    <button class="add-btn" data-type="blocked_protocols" data-input="new-protocol-input">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -126,8 +163,8 @@
             updateChartColors();
         };
 
+        // --- SocketIO Listeners ---
         socket.on('connect', () => console.log('WebSocket Connected.'));
-
         socket.on('new_log', (log) => {
             const rowNode = table.row.add([
                 log.id, log.timestamp, log.src_ip, log.dst_ip, log.protocol,
@@ -136,9 +173,7 @@
             ]).draw(false).node();
             $(rowNode).addClass('new-row-animation');
         });
-
         socket.on('stats_update', (stats) => updateAllCharts(stats));
-
         socket.on('logs_cleared', () => {
             console.log('Server confirmed logs cleared. Updating UI.');
             table.clear().draw();
@@ -147,48 +182,42 @@
             $('#stopBtn').prop('disabled', true);
             $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
-
         socket.on('sniffer_error', (data) => {
             alert(`Sniffer Error: ${data.error}. Please select a valid interface and ensure you have root/admin privileges.`);
-            $('#startBtn').prop('disabled', false);
-            $('#stopBtn').prop('disabled', true);
+            $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
 
+        // --- Button Click Handlers ---
         $('#startBtn').on('click', () => {
             const selectedInterface = $('#interfaceSelect').val();
             socket.emit('start_logging', { interface: selectedInterface });
-
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🟢 Live SIEM Dashboard');
         });
-
         $('#stopBtn').on('click', () => {
             socket.emit('stop_logging');
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
-        
         $('#clearBtn').on('click', () => {
             if (confirm('Are you sure you want to delete all logs for this session? This action cannot be undone.')) {
                 socket.emit('clear_logs');
             }
         });
-
         $('#themeToggle').on('change', () => {
             $('body').toggleClass('dark-mode light-mode');
             localStorage.setItem('theme', $('body').hasClass('dark-mode') ? 'dark' : 'light');
             updateChartColors();
         });
 
+        // --- Charting Functions ---
         const updateAllCharts = (stats) => {
             updateChartData(charts.protocol, stats.protocols);
             updateChartData(charts.events, stats.events_over_time, 'line');
             updateChartData(charts.ip, stats.top_ips);
         };
-
         const updateChartData = (chart, data, type = 'default') => {
-            // Only update the chart if there is data to display
             if (!data || data.length === 0) {
                 return;
             }
@@ -204,7 +233,6 @@
             }
             chart.update();
         };
-        
         const updateChartColors = () => {
             const textColor = $('body').hasClass('dark-mode') ? '#e6edf3' : '#24292f';
             Object.values(charts).forEach(chart => {
@@ -218,11 +246,82 @@
                 chart.update();
             });
         };
-        
+
+        // --- Rules Modal Logic ---
+        const modal = $('#rulesModal');
+        $('#rulesBtn').on('click', () => {
+            fetchRulesAndPopulate();
+            modal.show();
+        });
+        $('.close-button').on('click', () => modal.hide());
+        $(window).on('click', (event) => {
+            if ($(event.target).is(modal)) {
+                modal.hide();
+            }
+        });
+
+        function fetchRulesAndPopulate() {
+            $.get('/get-rules', function(rules) {
+                populateRuleList('blocked-ips-list', rules.blocked_ips || [], 'blocked_ips');
+                populateRuleList('blocked-ports-list', rules.blocked_ports || [], 'blocked_ports');
+                populateRuleList('blocked-protocols-list', rules.blocked_protocols || [], 'blocked_protocols');
+            });
+        }
+
+        function populateRuleList(listId, items, type) {
+            const listElement = $(`#${listId}`);
+            listElement.empty();
+            items.forEach(item => {
+                listElement.append(`
+                    <div class="rule-item">
+                        <span>${item}</span>
+                        <button class="remove-btn" data-type="${type}" data-value="${item}">-</button>
+                    </div>
+                `);
+            });
+        }
+
+        $('.add-btn').on('click', function() {
+            const type = $(this).data('type');
+            const inputId = $(this).data('input');
+            const value = $(`#${inputId}`).val().trim();
+            if (value) {
+                updateRule('add', type, value);
+                $(`#${inputId}`).val('');
+            }
+        });
+
+        $(document).on('click', '.remove-btn', function() {
+            const type = $(this).data('type');
+            const value = $(this).data('value');
+            updateRule('remove', type, value);
+        });
+
+        function updateRule(action, type, value) {
+            $.ajax({
+                url: '/update-rule',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ action, type, value }),
+                success: function(response) {
+                    if (response.status === 'success') {
+                        populateRuleList('blocked-ips-list', response.rules.blocked_ips || [], 'blocked_ips');
+                        populateRuleList('blocked-ports-list', response.rules.blocked_ports || [], 'blocked_ports');
+                        populateRuleList('blocked-protocols-list', response.rules.blocked_protocols || [], 'blocked_protocols');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Failed to update rule: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Server error'));
+                }
+            });
+        }
+
+        // --- Initial Setup ---
         if (localStorage.getItem('theme') === 'light') {
             $('#themeToggle').prop('checked', false).trigger('change');
         }
-        
         initializeCharts();
     });
 </script>
