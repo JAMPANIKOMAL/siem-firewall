@@ -1,68 +1,43 @@
-# Python SIEM Firewall
+# My-SIEM: A Python Network Monitor
 
-A Python-based firewall and log dashboard with real-time packet filtering, logging, and analytics. This project uses Scapy for packet sniffing, iptables for blocking, SQLite for log storage, and Flask for a web dashboard.
+## What is a SIEM?
+SIEM stands for **Security Information and Event Management**. It is a solution that helps organizations detect, analyze, and respond to security threats before they harm business operations. A SIEM tool collects log data from various sources, identifies activity that deviates from the norm, and takes appropriate action. For example, it can collect security data from network devices, servers, and applications, and present it all in a central dashboard.
+
+This project is the first step in building a personal, lightweight SIEM.
+
+### Future Goals
+Our ambition is to develop this project into a fully-featured, professional SIEM tool. Future versions will aim to include more advanced threat detection, automated response capabilities, comprehensive reporting, and the integration of a robust firewall, making it a powerful asset for any security enthusiast or small organization.
+
+## What It Does
+This tool captures and analyzes network packets on a selected network interface. Its core functionality is to provide visibility and control over the traffic flowing to and from the machine it's running on.
+
+* **PC Monitoring (Default Mode):** Out of the box, the application monitors all network traffic associated with the computer it is running on. By selecting a specific interface like `eth0` or `wlan0`, you can see all connections being made to and from your PC.
+
+* **Router/Network Monitoring (Advanced):** The software is capable of monitoring an entire network's traffic (all devices connected to your router). However, this requires a specific hardware setup. To achieve this, you need a **managed** network switch that supports **port mirroring (or SPAN)**. You must configure the switch to send a copy of all traffic from the router's port to the port your computer is connected to. Once configured, you can select the corresponding interface in the dashboard to view all network activity.
+
+## Project Structure
+The repository is organized as follows:
+
+* `agent/`: This directory contains all the core source code for the application, including the Python scripts (`app.py`, `analyzer.py`, etc.), web templates (`index.html`), and static files (`style.css`).
+* `Dockerfile`: This file contains all the instructions to build the Docker image for the application, ensuring all dependencies and configurations are correct for easy deployment.
+* `README.md`: This file, providing documentation and instructions for the project.
 
 ## Features
+* **Live Packet Capture:** Uses Scapy to sniff network traffic in real time.
+* **Dynamic Interface Selection:** Choose which network interface to monitor directly from the dashboard.
+* **Comprehensive Logging:** All detected packets are logged to a local SQLite database (`logs.db`).
+* **Rich Web Dashboard:** Built with Flask and Socket.IO, the dashboard features:
+    * A live-updating log table with search and filtering.
+    * Real-time charts for Protocol Distribution, Events Over Time, and Top Source IPs.
+    * Light and Dark theme modes.
+    * Ability to save session logs to a JSON file.
 
-- **Real-time packet capture** using Scapy
-- **Selectable Scan Modes**: Choose to monitor traffic just for your PC or for your entire network (requires network hardware support).
-- **Firewall rules** from `rules.json` (block IPs, ports, protocols)
-- **Automatic blocking** via iptables
-- **Logging** of all packet actions to SQLite (`logs.db`)
-- **Web dashboard** (Flask) with:
-  - Search and filter logs
-  - Protocol, action, and top source IP charts (Chart.js)
-  - Data table with sorting and pagination (DataTables)
-  - Light/dark theme toggle
+## Installation and Usage (Docker - Recommended)
+Using Docker is the easiest way to run the application with all its dependencies managed.
 
-## Getting Started
-
-### Prerequisites
-
-- Python 3.7+
-- `pip install -r requirements.txt`
-- Linux (iptables required for blocking)
-- For "Router" mode: A managed switch with port mirroring capabilities.
-
-### Setup
-
-1. Clone the repository.
-2. Install dependencies:
-    ```
-    pip install -r requirements.txt
-    ```
-3. **Configure Network (for Router Mode)**: If you want to monitor all router traffic, configure port mirroring on your switch to send all traffic to the network interface of the machine running this script.
-4. **Update Interface (for Router Mode)**: In `app.py`, change the `interface = 'eth1'` variable to the name of the network interface that is receiving the mirrored traffic.
-5. Run the dashboard (requires root for packet sniffing and iptables):
-    ```
-    sudo python app.py
-    ```
-6. Visit [http://localhost:5000](http://localhost:5000) in your browser.
-
-### File Structure
-
-- `app.py` - Flask dashboard and packet sniffer control
-- `analyzer.py` - Packet analysis and firewall logic
-- `detector.py` - Suspicious activity detection
-- `log_writer.py` - SQLite logging functions
-- `rules.json` - Firewall rules and detection thresholds
-- `logs.db` - Log database
-- `templates/index.html` - Dashboard UI
-- `static/style.css` - Custom styles
-- `requirements.txt` - Python dependencies
-
-## Customizing Rules
-
-Edit `rules.json` to block specific IPs, ports, or protocols, and to set thresholds for suspicious activity detection.
-
-```json
-{
-  "detection": {
-    "frequent_ip_threshold": 5,
-    "rare_protocol_percent": 10,
-    "repeated_block_threshold": 5
-  },
-  "blocked_ips": ["1.2.3.4"],
-  "blocked_ports": [23, 4444],
-  "blocked_protocols": ["ICMP"]
-}
+### 1. Install Docker
+First, ensure you have Docker installed on your Linux system. If not, you can install it by running:
+```bash
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo systemctl enable docker --now
