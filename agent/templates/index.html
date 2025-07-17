@@ -17,33 +17,41 @@
 <body class="dark-mode">
 <div class="container">
     <div class="top-bar">
-        <h1 id="dashboardTitle">🔴 Live SIEM Dashboard</h1>
-        <div class="controls-container">
-            <div class="toggle-switch">
-                <span>Light</span>
-                <label class="switch">
-                    <input type="checkbox" id="themeToggle">
-                    <span class="slider"></span>
-                </label>
-                <span>Dark</span>
+        <div class="logo-title">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
+                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 2L12 22" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12H22" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h1 id="dashboardTitle">Live SIEM Dashboard</h1>
+        </div>
+        
+        <div class="header-controls">
+            <div class="control-group">
+                <div class="toggle-switch">
+                    <span>Light</span>
+                    <label class="switch">
+                        <input type="checkbox" id="themeToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span>Dark</span>
+                </div>
+                <div class="interface-selector">
+                    <label for="interfaceSelect">Scan Target:</label>
+                    <select id="interfaceSelect">
+                        <option value="default">Default (My PC)</option>
+                        {% for iface in interfaces %}
+                        <option value="{{ iface }}">{{ iface }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            
-            <div class="interface-selector">
-                <label for="interfaceSelect">Scan Target:</label>
-                <select id="interfaceSelect">
-                    <option value="default">Default (My PC)</option>
-                    {% for iface in interfaces %}
-                    <option value="{{ iface }}">{{ iface }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="controls">
-                <button id="rulesBtn">⚙️ Manage Rules</button>
-                <button id="startBtn">▶️ Start Logging</button>
-                <button id="stopBtn" disabled>⏹️ Stop Logging</button>
-                <button id="clearBtn" class="btn-clear">🗑️ Clear Logs</button>
-                <a href="/save-logs" class="btn-save">💾 Save Logs</a>
+            <div class="control-group actions">
+                <button id="rulesBtn" class="btn-secondary">⚙️ Manage Rules</button>
+                <button id="startBtn" class="btn-start">▶️ Start</button>
+                <button id="stopBtn" class="btn-stop" disabled>⏹️ Stop</button>
+                <button id="clearBtn" class="btn-clear">🗑️ Clear</button>
+                <a href="/save-logs" class="btn-save">💾 Save</a>
             </div>
         </div>
     </div>
@@ -180,12 +188,14 @@
             initializeCharts();
             $('#startBtn').prop('disabled', false);
             $('#stopBtn').prop('disabled', true);
-            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
+            $('.logo-icon').removeClass('active');
+            $('#dashboardTitle').text('Live SIEM Dashboard');
         });
         socket.on('sniffer_error', (data) => {
             alert(`Sniffer Error: ${data.error}. Please select a valid interface and ensure you have root/admin privileges.`);
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
-            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
+            $('.logo-icon').removeClass('active');
+            $('#dashboardTitle').text('Live SIEM Dashboard');
         });
 
         // --- Button Click Handlers ---
@@ -193,12 +203,14 @@
             const selectedInterface = $('#interfaceSelect').val();
             socket.emit('start_logging', { interface: selectedInterface });
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
-            $('#dashboardTitle').html('🟢 Live SIEM Dashboard');
+            $('.logo-icon').addClass('active');
+            $('#dashboardTitle').text('Logging Active');
         });
         $('#stopBtn').on('click', () => {
             socket.emit('stop_logging');
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
-            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
+            $('.logo-icon').removeClass('active');
+            $('#dashboardTitle').text('Live SIEM Dashboard');
         });
         $('#clearBtn').on('click', () => {
             if (confirm('Are you sure you want to delete all logs for this session? This action cannot be undone.')) {
@@ -321,6 +333,8 @@
         // --- Initial Setup ---
         if (localStorage.getItem('theme') === 'light') {
             $('#themeToggle').prop('checked', false).trigger('change');
+        } else {
+            $('#themeToggle').prop('checked', true);
         }
         initializeCharts();
     });
