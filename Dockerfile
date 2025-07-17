@@ -4,12 +4,14 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies, then clean up to keep the image small
+# Install system dependencies with optimizations, then clean up
+# --no-install-recommends makes it faster and the image smaller
+# rm -rf cleans up the apt cache after installation
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libpcap-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file from the 'agent' subdirectory first
+# Copy the requirements file from the 'agent' subdirectory
 COPY agent/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
