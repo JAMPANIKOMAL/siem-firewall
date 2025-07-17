@@ -56,17 +56,6 @@
         </thead>
         <tbody>
         </tbody>
-        <tfoot>
-            <tr>
-                <th>ID</th>
-                <th>Time</th>
-                <th>Source IP</th>
-                <th>Destination IP</th>
-                <th>Protocol</th>
-                <th>Action</th>
-                <th>Reason</th>
-            </tr>
-        </tfoot>
     </table>
 </div>
 
@@ -80,24 +69,45 @@
         let charts = {};
         const socket = io();
         
-        // --- Initialize DataTable with Column Filtering ---
+        // --- Initialize DataTable with Custom Search ---
         const table = $('#logTable').DataTable({
-            orderCellsTop: true,
-            fixedHeader: true,
             "order": [[0, "desc"]],
             "pageLength": 10,
-            initComplete: function () {
-                this.api().columns().every(function () {
-                    const column = this;
-                    // Put the search input in the footer of each column
-                    const input = $('<input type="text" placeholder="Search..." />')
-                        .appendTo($(column.footer()).empty())
-                        .on('keyup change clear', function () {
-                            if (column.search() !== this.value) {
-                                column.search(this.value).draw();
-                            }
-                        });
-                });
+            // "dom" customizes the layout. We remove the default filter 'f'
+            // and add our own custom placeholder div.
+            "dom": 'l<"custom-search-area">rtip'
+        });
+
+        // Inject our custom search bar HTML into the placeholder div
+        const customSearchHtml = `
+            <div class="custom-search-container">
+                <select id="searchFilter">
+                    <option value="-1">Search All Columns</option>
+                    <option value="2">Source IP</option>
+                    <option value="3">Destination IP</option>
+                    <option value="4">Protocol</option>
+                    <option value="5">Action</option>
+                    <option value="6">Reason</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Enter search term...">
+            </div>
+        `;
+        $('.custom-search-area').html(customSearchHtml);
+
+        // Add event listener for our custom search bar
+        $('#searchInput, #searchFilter').on('keyup change', function() {
+            const filterIndex = $('#searchFilter').val();
+            const searchTerm = $('#searchInput').val();
+
+            // Clear all previous searches first
+            table.columns().search('');
+
+            if (filterIndex == "-1") {
+                // Global search on all columns
+                table.search(searchTerm).draw();
+            } else {
+                // Column-specific search
+                table.column(filterIndex).search(searchTerm).draw();
             }
         });
 
