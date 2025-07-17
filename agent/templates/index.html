@@ -84,10 +84,14 @@
         </div>
         <div class="chart-box">
             <div class="chart-header">
-                <h3>Top Source IPs</h3>
+                <h3 id="barChartTitle">Top Source IPs</h3>
+                <div class="chart-controls" id="bar-chart-controls">
+                    <button class="chart-control-btn active" data-column="src_ip">Source</button>
+                    <button class="chart-control-btn" data-column="dst_ip">Destination</button>
+                </div>
             </div>
             <div class="chart-wrapper">
-                <canvas id="ipChart"></canvas>
+                <canvas id="barChart"></canvas>
             </div>
         </div>
     </div>
@@ -194,11 +198,11 @@
             
             if(charts.pie) charts.pie.destroy();
             if(charts.events) charts.events.destroy();
-            if(charts.ip) charts.ip.destroy();
+            if(charts.bar) charts.bar.destroy();
 
             charts.pie = new Chart($('#pieChart'), { type: 'doughnut', data: { ...placeholderData }, options: chartOptions });
             charts.events = new Chart($('#eventsChart'), { type: 'line', data: { labels: [], datasets: [{label: 'Events', data: [], tension: 0.1, fill: true }] }, options: chartOptions });
-            charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: chartOptions });
+            charts.bar = new Chart($('#barChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: chartOptions });
             
             updateChartColors();
         };
@@ -277,12 +281,23 @@
             socket.emit('set_pie_chart_column', { column: newColumn });
         });
 
+        // Bar Chart Controls
+        $('#bar-chart-controls').on('click', '.chart-control-btn', function() {
+            if ($(this).hasClass('active')) return;
+            const newColumn = $(this).data('column');
+            $('#bar-chart-controls .chart-control-btn').removeClass('active');
+            $(this).addClass('active');
+            const title = newColumn === 'src_ip' ? 'Top Source IPs' : 'Top Destination IPs';
+            $('#barChartTitle').text(title);
+            socket.emit('set_bar_chart_column', { column: newColumn });
+        });
+
 
         // --- Charting Functions ---
         const updateAllCharts = (stats) => {
             updateChartData(charts.pie, stats.pie_chart_data, 'doughnut');
             updateChartData(charts.events, stats.events_over_time, 'line');
-            updateChartData(charts.ip, stats.top_ips, 'bar');
+            updateChartData(charts.bar, stats.bar_chart_data, 'bar');
         };
         const updateChartData = (chart, data, type) => {
             if (!data || data.length === 0) {

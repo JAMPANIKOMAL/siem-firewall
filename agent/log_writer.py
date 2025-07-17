@@ -40,8 +40,7 @@ def fetch_all_logs():
     return rows
 
 def get_stats_by_column(column='protocol', limit=7):
-    """Fetches statistics for a given column, to be used in charts."""
-    # Allow-list to prevent SQL injection
+    """Fetches statistics for a given column, to be used in pie charts."""
     if column not in ['protocol', 'action']:
         return []
     
@@ -53,10 +52,15 @@ def get_stats_by_column(column='protocol', limit=7):
     conn.close()
     return data
 
-def get_top_source_ips(limit=5):
+def get_top_stats(column='src_ip', limit=5):
+    """Fetches top statistics for a given column, for bar charts."""
+    if column not in ['src_ip', 'dst_ip']:
+        return []
+
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
-    cursor.execute("SELECT src_ip, COUNT(*) FROM logs GROUP BY src_ip ORDER BY COUNT(*) DESC LIMIT ?", (limit,))
+    query = f"SELECT {column}, COUNT(*) as count FROM logs GROUP BY {column} ORDER BY count DESC LIMIT ?"
+    cursor.execute(query, (limit,))
     data = cursor.fetchall()
     conn.close()
     return data

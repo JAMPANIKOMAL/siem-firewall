@@ -7,7 +7,7 @@ import sqlite3
 import os
 
 from analyzer import handle_packet
-from log_writer import init_db, get_stats_by_column, get_top_source_ips, get_events_by_time, fetch_all_logs
+from log_writer import init_db, get_stats_by_column, get_top_stats, get_events_by_time, fetch_all_logs
 
 # --- App, SocketIO, and Lock Initialization ---
 app = Flask(__name__)
@@ -20,6 +20,7 @@ sniffer_thread = None
 stop_sniffer_event = Event()
 time_granularity = 'minute' # Default for events chart
 pie_chart_column = 'protocol' # Default for pie chart
+bar_chart_column = 'src_ip' # Default for bar chart
 
 def reset_database():
     """Deletes the old database file and initializes a new, empty one."""
@@ -34,10 +35,10 @@ def reset_database():
 
 def get_stats():
     """Helper function to gather all stats for the dashboard."""
-    global time_granularity, pie_chart_column
+    global time_granularity, pie_chart_column, bar_chart_column
     return {
         'pie_chart_data': get_stats_by_column(column=pie_chart_column),
-        'top_ips': get_top_source_ips(),
+        'bar_chart_data': get_top_stats(column=bar_chart_column),
         'events_over_time': get_events_by_time(granularity=time_granularity)
     }
 
@@ -138,6 +139,16 @@ def handle_set_pie_chart_column(data):
     if new_column in ['protocol', 'action']:
         pie_chart_column = new_column
         print(f"Pie chart column set to: {pie_chart_column}")
+        socketio.emit('stats_update', get_stats())
+
+@socketio.on('set_bar_chart_column')
+def handle_set_bar_chart_column(data):
+    """Sets the data column for the bar chart."""
+    global bar_chart_column
+    new_column = data.get('column')
+    if new_column in ['src_ip', 'dst_ip']:
+        bar_chart_column = new_column
+        print(f"Bar chart column set to: {bar_chart_column}")
         socketio.emit('stats_update', get_stats())
 
 @socketio.on('start_logging')
