@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Live Firewall Dashboard</title>
+    <title>Live SIEM Dashboard</title>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
@@ -17,7 +17,7 @@
 <body class="dark-mode">
 <div class="container">
     <div class="top-bar">
-        <h1 id="dashboardTitle">🔴 Live Firewall Dashboard</h1>
+        <h1 id="dashboardTitle">🔴 Live SIEM Dashboard</h1>
         <div class="controls-container">
             <div class="toggle-switch">
                 <span>Light</span>
@@ -101,19 +101,19 @@
             initializeCharts();
             $('#startBtn').prop('disabled', false);
             $('#stopBtn').prop('disabled', true);
-            $('#dashboardTitle').html('🔴 Live Firewall Dashboard');
+            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
 
         $('#startBtn').on('click', () => {
             socket.emit('start_logging');
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
-            $('#dashboardTitle').html('🟢 Live Firewall Dashboard');
+            $('#dashboardTitle').html('🟢 Live SIEM Dashboard');
         });
 
         $('#stopBtn').on('click', () => {
             socket.emit('stop_logging');
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
-            $('#dashboardTitle').html('🔴 Live Firewall Dashboard');
+            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
         
         $('#clearBtn').on('click', () => {

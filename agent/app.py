@@ -6,13 +6,13 @@ import json
 import sqlite3
 import os
 
-# Import your existing firewall and log writer functions
-from firewall import handle_packet, load_rules
+# Import from the renamed analyzer.py file
+from analyzer import handle_packet, load_rules
 from log_writer import init_db, log_packet, get_protocol_stats, get_action_stats, get_top_source_ips, fetch_all_logs
 
 # --- App and SocketIO Initialization ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-very-secret-key' # Essential for SocketIO
+app.config['SECRET_KEY'] = 'your-very-secret-key'
 socketio = SocketIO(app, async_mode='threading')
 
 # --- Global variables for controlling the sniffer thread ---
@@ -31,9 +31,7 @@ def reset_database():
     init_db()
 
 def packet_handler_with_emit(packet):
-    """
-    This function processes a packet and emits the log data over WebSocket.
-    """
+    """Processes a packet and emits the log data over WebSocket."""
     log_data = handle_packet(packet)
     if log_data:
         socketio.emit('new_log', log_data)
@@ -53,17 +51,14 @@ def run_sniffer(stop_event):
 
 @app.route('/')
 def index():
-    """Serves the main dashboard page, which is now clean on load."""
     return render_template('index.html')
 
 @socketio.on('connect')
 def handle_connect():
-    """A client connected to our WebSocket."""
     print('Client connected')
 
 @socketio.on('start_logging')
 def handle_start_logging():
-    """Starts the packet sniffer thread when requested by a client."""
     global sniffer_thread
     if sniffer_thread is None or not sniffer_thread.is_alive():
         stop_sniffer_event.clear()
@@ -73,7 +68,6 @@ def handle_start_logging():
 
 @socketio.on('stop_logging')
 def handle_stop_logging():
-    """Stops the packet sniffer thread."""
     stop_sniffer_event.set()
     global sniffer_thread
     sniffer_thread = None
@@ -81,24 +75,19 @@ def handle_stop_logging():
     
 @socketio.on('clear_logs')
 def handle_clear_logs():
-    """Handles request to clear logs from the database and UI."""
     global sniffer_thread
-    # Stop the sniffer if it's running to prevent issues
     if sniffer_thread and sniffer_thread.is_alive():
         stop_sniffer_event.set()
-        sniffer_thread.join() # Wait for thread to finish
+        sniffer_thread.join()
         sniffer_thread = None
         print("Logging stopped to clear database.")
         
     reset_database()
     print("Database has been cleared.")
-    
-    # Notify the client that logs are cleared so it can update the UI
     socketio.emit('logs_cleared')
 
 @app.route('/save-logs')
 def save_logs():
-    """Endpoint to download all captured logs as a JSON file."""
     logs = fetch_all_logs()
     headers = ["id", "timestamp", "src_ip", "dst_ip", "protocol", "action", "reason"]
     log_list = [dict(zip(headers, log)) for log in logs]
@@ -106,9 +95,9 @@ def save_logs():
     return Response(
         json.dumps(log_list, indent=2),
         mimetype='application/json',
-        headers={'Content-Disposition': 'attachment;filename=firewall_logs.json'}
+        headers={'Content-Disposition': 'attachment;filename=siem_logs.json'}
     )
 
 if __name__ == '__main__':
-    reset_database() # Reset the DB every time the script is run
+    reset_database()
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)

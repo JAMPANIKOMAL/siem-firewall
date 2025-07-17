@@ -4,15 +4,17 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# === NEW: Install system dependencies required by Scapy ===
-RUN apt-get update && apt-get install -y libpcap-dev
+# Install system dependencies, then clean up to keep the image small
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpcap-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file and install dependencies
-COPY firewall/requirements.txt .
+# Copy the requirements file from the 'agent' subdirectory first
+COPY agent/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code from the 'firewall' subdirectory
-COPY firewall/ .
+# Copy the rest of the application code from the 'agent' subdirectory
+COPY agent/ .
 
 # Expose the port the app runs on
 EXPOSE 5000
