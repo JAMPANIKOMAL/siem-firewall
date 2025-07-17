@@ -39,18 +39,16 @@ def fetch_all_logs():
     conn.close()
     return rows
 
-def get_protocol_stats():
+def get_stats_by_column(column='protocol', limit=7):
+    """Fetches statistics for a given column, to be used in charts."""
+    # Allow-list to prevent SQL injection
+    if column not in ['protocol', 'action']:
+        return []
+    
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
-    cursor.execute("SELECT protocol, COUNT(*) FROM logs GROUP BY protocol")
-    data = cursor.fetchall()
-    conn.close()
-    return data
-
-def get_action_stats():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("SELECT action, COUNT(*) FROM logs GROUP BY action")
+    query = f"SELECT {column}, COUNT(*) as count FROM logs GROUP BY {column} ORDER BY count DESC LIMIT ?"
+    cursor.execute(query, (limit,))
     data = cursor.fetchall()
     conn.close()
     return data

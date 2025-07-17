@@ -100,9 +100,9 @@ body.light-mode .chart-box { background: var(--card-light); border: 1px solid va
 
 .chart-controls { display: flex; gap: 5px; background-color: var(--bg-dark); border: 1px solid var(--border-dark); border-radius: 6px; padding: 4px; }
 body.light-mode .chart-controls { background-color: var(--bg-light); border-color: var(--border-light); }
-.chart-controls .time-btn { padding: 4px 10px; border: none; background-color: transparent; color: var(--text-muted-dark); cursor: pointer; border-radius: 4px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s ease; }
-body.light-mode .chart-controls .time-btn { color: var(--text-muted-light); }
-.chart-controls .time-btn.active { background-color: var(--primary); color: white; font-weight: 600; }
+.chart-controls .chart-control-btn { padding: 4px 10px; border: none; background-color: transparent; color: var(--text-muted-dark); cursor: pointer; border-radius: 4px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s ease; }
+body.light-mode .chart-controls .chart-control-btn { color: var(--text-muted-light); }
+.chart-controls .chart-control-btn.active { background-color: var(--primary); color: white; font-weight: 600; }
 
 #logTable { width: 100%; }
 .action-allowed { color: #3fb950; font-weight: bold; }

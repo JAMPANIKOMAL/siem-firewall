@@ -59,19 +59,23 @@
     <div class="charts-container">
         <div class="chart-box">
             <div class="chart-header">
-                <h3>Protocol Distribution</h3>
+                <h3 id="pieChartTitle">Protocol Distribution</h3>
+                <div class="chart-controls" id="pie-chart-controls">
+                    <button class="chart-control-btn active" data-column="protocol">Protocol</button>
+                    <button class="chart-control-btn" data-column="action">Action</button>
+                </div>
             </div>
             <div class="chart-wrapper">
-                <canvas id="protocolChart"></canvas>
+                <canvas id="pieChart"></canvas>
             </div>
         </div>
         <div class="chart-box">
             <div class="chart-header">
                 <h3 id="eventsChartTitle">Events Per Minute</h3>
                 <div class="chart-controls" id="time-granularity-controls">
-                    <button class="time-btn" data-unit="hour">Hour</button>
-                    <button class="time-btn active" data-unit="minute">Minute</button>
-                    <button class="time-btn" data-unit="second">Second</button>
+                    <button class="chart-control-btn" data-unit="hour">Hour</button>
+                    <button class="chart-control-btn active" data-unit="minute">Minute</button>
+                    <button class="chart-control-btn" data-unit="second">Second</button>
                 </div>
             </div>
             <div class="chart-wrapper">
@@ -188,11 +192,11 @@
             const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: true }, tooltip: { enabled: true } }, animation: { duration: 0 } };
             const placeholderData = { labels: ['Awaiting Data'], datasets: [{ data: [1], backgroundColor: ['#30363d'], label: 'Awaiting Data' }] };
             
-            if(charts.protocol) charts.protocol.destroy();
+            if(charts.pie) charts.pie.destroy();
             if(charts.events) charts.events.destroy();
             if(charts.ip) charts.ip.destroy();
 
-            charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: { ...placeholderData }, options: chartOptions });
+            charts.pie = new Chart($('#pieChart'), { type: 'doughnut', data: { ...placeholderData }, options: chartOptions });
             charts.events = new Chart($('#eventsChart'), { type: 'line', data: { labels: [], datasets: [{label: 'Events', data: [], tension: 0.1, fill: true }] }, options: chartOptions });
             charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: chartOptions });
             
@@ -250,30 +254,42 @@
             localStorage.setItem('theme', $('body').hasClass('dark-mode') ? 'dark' : 'light');
             updateChartColors();
         });
-        $('#time-granularity-controls').on('click', '.time-btn', function() {
+        
+        // Time Granularity Controls
+        $('#time-granularity-controls').on('click', '.chart-control-btn', function() {
             if ($(this).hasClass('active')) return;
-
             const newGranularity = $(this).data('unit');
-            $('#time-granularity-controls .time-btn').removeClass('active');
+            $('#time-granularity-controls .chart-control-btn').removeClass('active');
             $(this).addClass('active');
-
             const capitalized = newGranularity.charAt(0).toUpperCase() + newGranularity.slice(1);
             $('#eventsChartTitle').text(`Events Per ${capitalized}`);
-
             socket.emit('set_granularity', { granularity: newGranularity });
         });
 
+        // Pie Chart Controls
+        $('#pie-chart-controls').on('click', '.chart-control-btn', function() {
+            if ($(this).hasClass('active')) return;
+            const newColumn = $(this).data('column');
+            $('#pie-chart-controls .chart-control-btn').removeClass('active');
+            $(this).addClass('active');
+            const capitalized = newColumn.charAt(0).toUpperCase() + newColumn.slice(1);
+            $('#pieChartTitle').text(`${capitalized} Distribution`);
+            socket.emit('set_pie_chart_column', { column: newColumn });
+        });
+
+
         // --- Charting Functions ---
         const updateAllCharts = (stats) => {
-            updateChartData(charts.protocol, stats.protocols);
+            updateChartData(charts.pie, stats.pie_chart_data, 'doughnut');
             updateChartData(charts.events, stats.events_over_time, 'line');
-            updateChartData(charts.ip, stats.top_ips);
+            updateChartData(charts.ip, stats.top_ips, 'bar');
         };
-        const updateChartData = (chart, data, type = 'default') => {
+        const updateChartData = (chart, data, type) => {
             if (!data || data.length === 0) {
-                if (type === 'line' || type === 'bar') {
-                    chart.data.labels = [];
-                    chart.data.datasets[0].data = [];
+                if (type === 'line' || type === 'bar' || type === 'doughnut') {
+                    chart.data.labels = ['Awaiting Data'];
+                    chart.data.datasets[0].data = [1];
+                    chart.data.datasets[0].backgroundColor = ['#30363d'];
                     chart.update();
                 }
                 return;
@@ -285,8 +301,8 @@
             if (type === 'line') {
                 chart.data.datasets[0].borderColor = '#36a2eb';
                 chart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.2)';
-            } else if (type !== 'doughnut') {
-                chart.data.datasets[0].backgroundColor = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
+            } else { // For 'doughnut' and 'bar'
+                chart.data.datasets[0].backgroundColor = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'];
             }
             chart.update();
         };
