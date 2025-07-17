@@ -1,8 +1,6 @@
-# firewall.py
-
 import json
 from datetime import datetime
-from scapy.all import sniff, IP, TCP, UDP, ICMP
+from scapy.all import IP, TCP, UDP, ICMP
 import subprocess
 from log_writer import log_packet, init_db
 
@@ -12,9 +10,11 @@ init_db()
 # 🔒 Block an IP with iptables if not already blocked
 def block_ip(ip):
     try:
-        subprocess.run(["iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"], check=True)
+        # Check if the rule already exists
+        subprocess.run(["iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"], check=True, capture_output=True)
     except subprocess.CalledProcessError:
-        subprocess.run(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+        # If the rule doesn't exist, add it
+        subprocess.run(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"], check=True)
         print(f"🔒 Blocked IP: {ip}")
 
 # 📜 Load firewall rules from rules.json
@@ -57,10 +57,18 @@ def handle_packet(packet):
         if blocked:
             block_ip(src_ip)
 
-        log_packet(timestamp, src_ip, dst_ip, proto, action, reason)
+        # Log to DB and get the new ID
+        log_entry_id = log_packet(timestamp, src_ip, dst_ip, proto, action, reason)
         print(f"[{action}] {timestamp} {src_ip} → {dst_ip} [{proto}] — {reason}")
 
-# 🔥 Entry point (manual mode only)
-if __name__ == "__main__":
-    print("🔒 Starting Python Firewall (manual mode)... Ctrl+C to stop.")
-    sniff(filter="ip", prn=handle_packet, store=0)
+        # Return the log as a dictionary for real-time emission
+        return {
+            "id": log_entry_id,
+            "timestamp": timestamp,
+            "src_ip": src_ip,
+            "dst_ip": dst_ip,
+            "protocol": proto,
+            "action": action,
+            "reason": reason
+        }
+    return None

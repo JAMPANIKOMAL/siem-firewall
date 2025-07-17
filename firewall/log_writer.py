@@ -3,7 +3,7 @@ import sqlite3
 DB_PATH = "logs.db"
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS logs (
@@ -20,28 +20,28 @@ def init_db():
     conn.close()
 
 def log_packet(timestamp, src_ip, dst_ip, protocol, action, reason):
-    conn = sqlite3.connect(DB_PATH)
+    # Added check_same_thread=False to support multi-threading
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO logs (timestamp, src_ip, dst_ip, protocol, action, reason)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (timestamp, src_ip, dst_ip, protocol, action, reason))
+    new_id = cursor.lastrowid # Get the ID of the row we just inserted
     conn.commit()
     conn.close()
-
+    return new_id # Return the new ID
 
 def fetch_all_logs():
-    conn = sqlite3.connect("logs.db")
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM logs ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
 
-
-
 def fetch_filtered_logs(query="", action=""):
-    conn = sqlite3.connect("logs.db")
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     query_like = f"%{query}%"
     
@@ -63,10 +63,8 @@ def fetch_filtered_logs(query="", action=""):
     conn.close()
     return rows
 
-
-
 def get_protocol_stats():
-    conn = sqlite3.connect("logs.db")
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("SELECT protocol, COUNT(*) FROM logs GROUP BY protocol")
     data = cursor.fetchall()
@@ -74,7 +72,7 @@ def get_protocol_stats():
     return data
 
 def get_action_stats():
-    conn = sqlite3.connect("logs.db")
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("SELECT action, COUNT(*) FROM logs GROUP BY action")
     data = cursor.fetchall()
@@ -82,7 +80,7 @@ def get_action_stats():
     return data
 
 def get_top_source_ips(limit=5):
-    conn = sqlite3.connect("logs.db")
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("SELECT src_ip, COUNT(*) FROM logs GROUP BY src_ip ORDER BY COUNT(*) DESC LIMIT ?", (limit,))
     data = cursor.fetchall()
