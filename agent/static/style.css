@@ -79,9 +79,31 @@ body.light-mode .slider { background-color: var(--bg-light); border-color: var(-
 body.light-mode .slider:before { background-color: var(--text-muted-light); }
 
 /* === Chart & Table Styles === */
-.charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.chart-box { background: var(--card-dark); border: 1px solid var(--border-dark); padding: 20px; border-radius: 8px; }
+.charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.chart-box { background: var(--card-dark); border: 1px solid var(--border-dark); padding: 20px; border-radius: 8px; display: flex; flex-direction: column; }
 body.light-mode .chart-box { background: var(--card-light); border: 1px solid var(--border-light); }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
+.chart-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+
+.chart-wrapper {
+    position: relative;
+    flex-grow: 1;
+    min-height: 250px;
+}
+.chart-box canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.chart-controls { display: flex; gap: 5px; background-color: var(--bg-dark); border: 1px solid var(--border-dark); border-radius: 6px; padding: 4px; }
+body.light-mode .chart-controls { background-color: var(--bg-light); border-color: var(--border-light); }
+.chart-controls .time-btn { padding: 4px 10px; border: none; background-color: transparent; color: var(--text-muted-dark); cursor: pointer; border-radius: 4px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s ease; }
+body.light-mode .chart-controls .time-btn { color: var(--text-muted-light); }
+.chart-controls .time-btn.active { background-color: var(--primary); color: white; font-weight: 600; }
+
 #logTable { width: 100%; }
 .action-allowed { color: #3fb950; font-weight: bold; }
 .action-blocked { color: #f85149; font-weight: bold; }

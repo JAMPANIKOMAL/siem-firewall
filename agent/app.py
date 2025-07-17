@@ -15,9 +15,10 @@ app.config['SECRET_KEY'] = 'your-very-secret-key'
 socketio = SocketIO(app, async_mode='threading')
 rules_lock = Lock() # To prevent race conditions when reading/writing rules.json
 
-# --- Global variables for controlling the sniffer thread ---
+# --- Global variables ---
 sniffer_thread = None
 stop_sniffer_event = Event()
+time_granularity = 'minute' # Default granularity for the events chart
 
 def reset_database():
     """Deletes the old database file and initializes a new, empty one."""
@@ -32,11 +33,12 @@ def reset_database():
 
 def get_stats():
     """Helper function to gather all stats for the dashboard."""
+    global time_granularity
     return {
         'protocols': get_protocol_stats(),
         'actions': get_action_stats(),
         'top_ips': get_top_source_ips(),
-        'events_over_time': get_events_by_time()
+        'events_over_time': get_events_by_time(granularity=time_granularity)
     }
 
 def packet_handler_with_emit(packet):
@@ -87,7 +89,6 @@ def update_rule():
         with open("rules.json", "r+") as f:
             rules = json.load(f)
             
-            # Ensure the list exists
             if rule_type not in rules:
                 rules[rule_type] = []
 
@@ -118,6 +119,16 @@ def update_rule():
 def handle_connect():
     print('Client connected')
     socketio.emit('stats_update', get_stats())
+
+@socketio.on('set_granularity')
+def handle_set_granularity(data):
+    """Sets the time granularity for the events chart."""
+    global time_granularity
+    new_granularity = data.get('granularity')
+    if new_granularity in ['second', 'minute', 'hour']:
+        time_granularity = new_granularity
+        print(f"Time granularity set to: {time_granularity}")
+        socketio.emit('stats_update', get_stats())
 
 @socketio.on('start_logging')
 def handle_start_logging(data):

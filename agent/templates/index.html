@@ -57,9 +57,35 @@
     </div>
 
     <div class="charts-container">
-        <div class="chart-box"><canvas id="protocolChart"></canvas></div>
-        <div class="chart-box"><canvas id="eventsChart"></canvas></div>
-        <div class="chart-box"><canvas id="ipChart"></canvas></div>
+        <div class="chart-box">
+            <div class="chart-header">
+                <h3>Protocol Distribution</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="protocolChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-header">
+                <h3 id="eventsChartTitle">Events Per Minute</h3>
+                <div class="chart-controls" id="time-granularity-controls">
+                    <button class="time-btn" data-unit="hour">Hour</button>
+                    <button class="time-btn active" data-unit="minute">Minute</button>
+                    <button class="time-btn" data-unit="second">Second</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="eventsChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-header">
+                <h3>Top Source IPs</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="ipChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <table id="logTable" class="display">
@@ -159,15 +185,17 @@
         });
 
         const initializeCharts = () => {
-            const placeholderOptions = (title) => ({ responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: title, font: { size: 16 } }, legend: { display: true }, tooltip: { enabled: false } }, animation: { duration: 0 } });
+            const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: true }, tooltip: { enabled: true } }, animation: { duration: 0 } };
             const placeholderData = { labels: ['Awaiting Data'], datasets: [{ data: [1], backgroundColor: ['#30363d'], label: 'Awaiting Data' }] };
+            
             if(charts.protocol) charts.protocol.destroy();
             if(charts.events) charts.events.destroy();
             if(charts.ip) charts.ip.destroy();
 
-            charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: { ...placeholderData }, options: placeholderOptions('Protocol Distribution') });
-            charts.events = new Chart($('#eventsChart'), { type: 'line', data: { labels: [], datasets: [{label: 'Events per Minute', data: [], tension: 0.1, fill: true }] }, options: placeholderOptions('Events Over Time') });
-            charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: placeholderOptions('Top Source IPs') });
+            charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: { ...placeholderData }, options: chartOptions });
+            charts.events = new Chart($('#eventsChart'), { type: 'line', data: { labels: [], datasets: [{label: 'Events', data: [], tension: 0.1, fill: true }] }, options: chartOptions });
+            charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: chartOptions });
+            
             updateChartColors();
         };
 
@@ -222,6 +250,18 @@
             localStorage.setItem('theme', $('body').hasClass('dark-mode') ? 'dark' : 'light');
             updateChartColors();
         });
+        $('#time-granularity-controls').on('click', '.time-btn', function() {
+            if ($(this).hasClass('active')) return;
+
+            const newGranularity = $(this).data('unit');
+            $('#time-granularity-controls .time-btn').removeClass('active');
+            $(this).addClass('active');
+
+            const capitalized = newGranularity.charAt(0).toUpperCase() + newGranularity.slice(1);
+            $('#eventsChartTitle').text(`Events Per ${capitalized}`);
+
+            socket.emit('set_granularity', { granularity: newGranularity });
+        });
 
         // --- Charting Functions ---
         const updateAllCharts = (stats) => {
@@ -231,6 +271,11 @@
         };
         const updateChartData = (chart, data, type = 'default') => {
             if (!data || data.length === 0) {
+                if (type === 'line' || type === 'bar') {
+                    chart.data.labels = [];
+                    chart.data.datasets[0].data = [];
+                    chart.update();
+                }
                 return;
             }
             chart.options.plugins.tooltip.enabled = true;
@@ -240,7 +285,7 @@
             if (type === 'line') {
                 chart.data.datasets[0].borderColor = '#36a2eb';
                 chart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.2)';
-            } else {
+            } else if (type !== 'doughnut') {
                 chart.data.datasets[0].backgroundColor = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
             }
             chart.update();
@@ -249,7 +294,6 @@
             const textColor = $('body').hasClass('dark-mode') ? '#e6edf3' : '#24292f';
             Object.values(charts).forEach(chart => {
                 if (!chart) return;
-                chart.options.plugins.title.color = textColor;
                 chart.options.plugins.legend.labels.color = textColor;
                 if (chart.options.scales) {
                     if (chart.options.scales.x) chart.options.scales.x.ticks.color = textColor;
@@ -261,81 +305,17 @@
 
         // --- Rules Modal Logic ---
         const modal = $('#rulesModal');
-        $('#rulesBtn').on('click', () => {
-            fetchRulesAndPopulate();
-            modal.show();
-        });
+        $('#rulesBtn').on('click', () => { fetchRulesAndPopulate(); modal.show(); });
         $('.close-button').on('click', () => modal.hide());
-        $(window).on('click', (event) => {
-            if ($(event.target).is(modal)) {
-                modal.hide();
-            }
-        });
-
-        function fetchRulesAndPopulate() {
-            $.get('/get-rules', function(rules) {
-                populateRuleList('blocked-ips-list', rules.blocked_ips || [], 'blocked_ips');
-                populateRuleList('blocked-ports-list', rules.blocked_ports || [], 'blocked_ports');
-                populateRuleList('blocked-protocols-list', rules.blocked_protocols || [], 'blocked_protocols');
-            });
-        }
-
-        function populateRuleList(listId, items, type) {
-            const listElement = $(`#${listId}`);
-            listElement.empty();
-            items.forEach(item => {
-                listElement.append(`
-                    <div class="rule-item">
-                        <span>${item}</span>
-                        <button class="remove-btn" data-type="${type}" data-value="${item}">-</button>
-                    </div>
-                `);
-            });
-        }
-
-        $('.add-btn').on('click', function() {
-            const type = $(this).data('type');
-            const inputId = $(this).data('input');
-            const value = $(`#${inputId}`).val().trim();
-            if (value) {
-                updateRule('add', type, value);
-                $(`#${inputId}`).val('');
-            }
-        });
-
-        $(document).on('click', '.remove-btn', function() {
-            const type = $(this).data('type');
-            const value = $(this).data('value');
-            updateRule('remove', type, value);
-        });
-
-        function updateRule(action, type, value) {
-            $.ajax({
-                url: '/update-rule',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ action, type, value }),
-                success: function(response) {
-                    if (response.status === 'success') {
-                        populateRuleList('blocked-ips-list', response.rules.blocked_ips || [], 'blocked_ips');
-                        populateRuleList('blocked-ports-list', response.rules.blocked_ports || [], 'blocked_ports');
-                        populateRuleList('blocked-protocols-list', response.rules.blocked_protocols || [], 'blocked_protocols');
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                },
-                error: function(xhr) {
-                    alert('Failed to update rule: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Server error'));
-                }
-            });
-        }
+        $(window).on('click', (event) => { if ($(event.target).is(modal)) { modal.hide(); } });
+        function fetchRulesAndPopulate() { $.get('/get-rules', function(rules) { populateRuleList('blocked-ips-list', rules.blocked_ips || [], 'blocked_ips'); populateRuleList('blocked-ports-list', rules.blocked_ports || [], 'blocked_ports'); populateRuleList('blocked-protocols-list', rules.blocked_protocols || [], 'blocked_protocols'); }); }
+        function populateRuleList(listId, items, type) { const listElement = $(`#${listId}`); listElement.empty(); items.forEach(item => { listElement.append(`<div class="rule-item"><span>${item}</span><button class="remove-btn" data-type="${type}" data-value="${item}">-</button></div>`); }); }
+        $('.add-btn').on('click', function() { const type = $(this).data('type'); const inputId = $(this).data('input'); const value = $(`#${inputId}`).val().trim(); if (value) { updateRule('add', type, value); $(`#${inputId}`).val(''); } });
+        $(document).on('click', '.remove-btn', function() { const type = $(this).data('type'); const value = $(this).data('value'); updateRule('remove', type, value); });
+        function updateRule(action, type, value) { $.ajax({ url: '/update-rule', type: 'POST', contentType: 'application/json', data: JSON.stringify({ action, type, value }), success: function(response) { if (response.status === 'success') { fetchRulesAndPopulate(); } else { alert('Error: ' + response.message); } }, error: function(xhr) { alert('Failed to update rule: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Server error')); } }); }
 
         // --- Initial Setup ---
-        if (localStorage.getItem('theme') === 'light') {
-            $('#themeToggle').prop('checked', false).trigger('change');
-        } else {
-            $('#themeToggle').prop('checked', true);
-        }
+        if (localStorage.getItem('theme') === 'light') { $('#themeToggle').prop('checked', false).trigger('change'); } else { $('#themeToggle').prop('checked', true); }
         initializeCharts();
     });
 </script>
