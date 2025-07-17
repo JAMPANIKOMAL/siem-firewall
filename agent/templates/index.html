@@ -56,6 +56,17 @@
         </thead>
         <tbody>
         </tbody>
+        <tfoot>
+            <tr>
+                <th>ID</th>
+                <th>Time</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Protocol</th>
+                <th>Action</th>
+                <th>Reason</th>
+            </tr>
+        </tfoot>
     </table>
 </div>
 
@@ -68,7 +79,27 @@
     $(document).ready(function () {
         let charts = {};
         const socket = io();
-        const table = $('#logTable').DataTable({ "order": [[0, "desc"]], "pageLength": 10 });
+        
+        // --- Initialize DataTable with Column Filtering ---
+        const table = $('#logTable').DataTable({
+            orderCellsTop: true,
+            fixedHeader: true,
+            "order": [[0, "desc"]],
+            "pageLength": 10,
+            initComplete: function () {
+                this.api().columns().every(function () {
+                    const column = this;
+                    // Put the search input in the footer of each column
+                    const input = $('<input type="text" placeholder="Search..." />')
+                        .appendTo($(column.footer()).empty())
+                        .on('keyup change clear', function () {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
+                });
+            }
+        });
 
         const initializeCharts = () => {
             const placeholderOptions = (title) => ({ responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: title, font: { size: 16 } }, legend: { display: true }, tooltip: { enabled: false } }, animation: { duration: 0 } });
