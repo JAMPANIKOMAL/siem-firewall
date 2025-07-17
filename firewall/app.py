@@ -4,6 +4,7 @@ from threading import Thread, Event
 from scapy.all import sniff
 import json
 import sqlite3
+import os
 
 # Import your existing firewall and log writer functions
 from firewall import handle_packet, load_rules
@@ -18,8 +19,16 @@ socketio = SocketIO(app, async_mode='threading')
 sniffer_thread = None
 stop_sniffer_event = Event()
 
-# --- Initialize the Database ---
-init_db()
+def reset_database():
+    """Deletes the old database file and initializes a new, empty one."""
+    db_file = "logs.db"
+    if os.path.exists(db_file):
+        try:
+            os.remove(db_file)
+            print(f"Removed old database: {db_file}")
+        except OSError as e:
+            print(f"Error removing database file {db_file}: {e}")
+    init_db()
 
 def packet_handler_with_emit(packet):
     """
@@ -27,19 +36,14 @@ def packet_handler_with_emit(packet):
     """
     log_data = handle_packet(packet)
     if log_data:
-        # Emit the new log to all connected web clients
         socketio.emit('new_log', log_data)
-        
-        # Periodically, we can also push updated stats for the charts
-        # This is a simple way to do it; more advanced methods exist
-        if log_data['id'] % 10 == 0: # Update stats every 10 packets
+        if log_data['id'] % 10 == 0:
             stats = {
                 'protocols': get_protocol_stats(),
                 'actions': get_action_stats(),
                 'top_ips': get_top_source_ips()
             }
             socketio.emit('stats_update', stats)
-
 
 def run_sniffer(stop_event):
     """The target function for the sniffer thread."""
@@ -89,4 +93,5 @@ def save_logs():
     )
 
 if __name__ == '__main__':
+    reset_database() # Reset the DB every time the script is run
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
