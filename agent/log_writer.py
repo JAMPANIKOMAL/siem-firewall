@@ -86,3 +86,20 @@ def get_top_source_ips(limit=5):
     data = cursor.fetchall()
     conn.close()
     return data
+
+def get_events_by_time(limit=30):
+    """Groups logs by minute to create time-series data."""
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    cursor = conn.cursor()
+    # This query groups logs by the minute they occurred in the last 30 minutes
+    cursor.execute("""
+        SELECT strftime('%H:%M', timestamp) as minute, COUNT(*)
+        FROM logs
+        WHERE timestamp >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-30 minutes')
+        GROUP BY minute
+        ORDER BY minute ASC
+        LIMIT ?
+    """, (limit,))
+    data = cursor.fetchall()
+    conn.close()
+    return data

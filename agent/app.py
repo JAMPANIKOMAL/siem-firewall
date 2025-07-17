@@ -6,9 +6,9 @@ import json
 import sqlite3
 import os
 
-# Import from the renamed analyzer.py file
-from analyzer import handle_packet, load_rules
-from log_writer import init_db, log_packet, get_protocol_stats, get_action_stats, get_top_source_ips, fetch_all_logs
+# Import the new get_events_by_time function
+from analyzer import handle_packet
+from log_writer import init_db, log_packet, get_protocol_stats, get_action_stats, get_top_source_ips, get_events_by_time, fetch_all_logs
 
 # --- App and SocketIO Initialization ---
 app = Flask(__name__)
@@ -30,18 +30,23 @@ def reset_database():
             print(f"Error removing database file {db_file}: {e}")
     init_db()
 
+def get_stats():
+    """Helper function to gather all stats for the dashboard."""
+    return {
+        'protocols': get_protocol_stats(),
+        'actions': get_action_stats(), # Keep this for the future
+        'top_ips': get_top_source_ips(),
+        'events_over_time': get_events_by_time()
+    }
+
 def packet_handler_with_emit(packet):
     """Processes a packet and emits the log data over WebSocket."""
     log_data = handle_packet(packet)
     if log_data:
         socketio.emit('new_log', log_data)
-        if log_data['id'] % 10 == 0:
-            stats = {
-                'protocols': get_protocol_stats(),
-                'actions': get_action_stats(),
-                'top_ips': get_top_source_ips()
-            }
-            socketio.emit('stats_update', stats)
+        # Update stats every 5 packets
+        if log_data['id'] % 5 == 0:
+            socketio.emit('stats_update', get_stats())
 
 def run_sniffer(stop_event):
     """The target function for the sniffer thread."""
@@ -56,7 +61,9 @@ def index():
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
+    socketio.emit('stats_update', get_stats())
 
+# All other socket handlers remain the same...
 @socketio.on('start_logging')
 def handle_start_logging():
     global sniffer_thread
@@ -81,7 +88,6 @@ def handle_clear_logs():
         sniffer_thread.join()
         sniffer_thread = None
         print("Logging stopped to clear database.")
-        
     reset_database()
     print("Database has been cleared.")
     socketio.emit('logs_cleared')
@@ -91,12 +97,8 @@ def save_logs():
     logs = fetch_all_logs()
     headers = ["id", "timestamp", "src_ip", "dst_ip", "protocol", "action", "reason"]
     log_list = [dict(zip(headers, log)) for log in logs]
-    
-    return Response(
-        json.dumps(log_list, indent=2),
-        mimetype='application/json',
-        headers={'Content-Disposition': 'attachment;filename=siem_logs.json'}
-    )
+    return Response(json.dumps(log_list, indent=2), mimetype='application/json',
+                    headers={'Content-Disposition': 'attachment;filename=siem_logs.json'})
 
 if __name__ == '__main__':
     reset_database()
