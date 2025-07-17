@@ -27,6 +27,18 @@
                 </label>
                 <span>Dark</span>
             </div>
+            
+            <!-- NEW: Interface Selection Dropdown -->
+            <div class="interface-selector">
+                <label for="interfaceSelect">Scan Target:</label>
+                <select id="interfaceSelect">
+                    <option value="default">Default (My PC)</option>
+                    {% for iface in interfaces %}
+                    <option value="{{ iface }}">{{ iface }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="controls">
                 <button id="startBtn">▶️ Start Logging</button>
                 <button id="stopBtn" disabled>⏹️ Stop Logging</button>
@@ -105,12 +117,10 @@
             const placeholderOptions = (title) => ({ responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: title, font: { size: 16 } }, legend: { display: true }, tooltip: { enabled: false } }, animation: { duration: 0 } });
             const placeholderData = { labels: ['Awaiting Data'], datasets: [{ data: [1], backgroundColor: ['#30363d'], label: 'Awaiting Data' }] };
             if(charts.protocol) charts.protocol.destroy();
-            if(charts.action) charts.action.destroy(); // Keep this to prevent errors on first run
-            if(charts.events) charts.events.destroy();   // Add destroy for new chart
+            if(charts.events) charts.events.destroy();
             if(charts.ip) charts.ip.destroy();
 
             charts.protocol = new Chart($('#protocolChart'), { type: 'doughnut', data: { ...placeholderData }, options: placeholderOptions('Protocol Distribution') });
-            // CHANGE 2: The middle chart is now a 'line' chart connected to 'eventsChart'
             charts.events = new Chart($('#eventsChart'), { type: 'line', data: { labels: [], datasets: [{label: 'Events per Minute', data: [], tension: 0.1, fill: true }] }, options: placeholderOptions('Events Over Time') });
             charts.ip = new Chart($('#ipChart'), { type: 'bar', data: { labels: ['Awaiting Data'], datasets:[{label: 'Packets', data:[0]}]}, options: placeholderOptions('Top Source IPs') });
             updateChartColors();
@@ -138,8 +148,17 @@
             $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
         });
 
+        socket.on('sniffer_error', (data) => {
+            alert(`Sniffer Error: ${data.error}. Please select a valid interface and ensure you have root/admin privileges.`);
+            $('#startBtn').prop('disabled', false);
+            $('#stopBtn').prop('disabled', true);
+            $('#dashboardTitle').html('🔴 Live SIEM Dashboard');
+        });
+
         $('#startBtn').on('click', () => {
-            socket.emit('start_logging');
+            const selectedInterface = $('#interfaceSelect').val();
+            socket.emit('start_logging', { interface: selectedInterface });
+
             $('#startBtn, #stopBtn').prop('disabled', (i, v) => !v);
             $('#dashboardTitle').html('🟢 Live SIEM Dashboard');
         });
@@ -164,13 +183,15 @@
 
         const updateAllCharts = (stats) => {
             updateChartData(charts.protocol, stats.protocols);
-            // CHANGE 3: Update the new 'events' chart instead of the old 'action' chart
             updateChartData(charts.events, stats.events_over_time, 'line');
             updateChartData(charts.ip, stats.top_ips);
         };
 
-        // CHANGE 4: The update function now handles a 'type' argument for special line chart styling
         const updateChartData = (chart, data, type = 'default') => {
+            // Only update the chart if there is data to display
+            if (!data || data.length === 0) {
+                return;
+            }
             chart.options.plugins.tooltip.enabled = true;
             chart.data.labels = data.map(d => d[0] || 'Unknown');
             chart.data.datasets[0].data = data.map(d => d[1]);
@@ -191,8 +212,8 @@
                 chart.options.plugins.title.color = textColor;
                 chart.options.plugins.legend.labels.color = textColor;
                 if (chart.options.scales) {
-                    chart.options.scales.x.ticks.color = textColor;
-                    chart.options.scales.y.ticks.color = textColor;
+                    if (chart.options.scales.x) chart.options.scales.x.ticks.color = textColor;
+                    if (chart.options.scales.y) chart.options.scales.y.ticks.color = textColor;
                 }
                 chart.update();
             });

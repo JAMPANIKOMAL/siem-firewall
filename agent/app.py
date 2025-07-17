@@ -1,7 +1,7 @@
 from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
 from threading import Thread, Event
-from scapy.all import sniff
+from scapy.all import sniff, get_if_list
 import json
 import sqlite3
 import os
@@ -48,35 +48,50 @@ def packet_handler_with_emit(packet):
         if log_data['id'] % 5 == 0:
             socketio.emit('stats_update', get_stats())
 
-def run_sniffer(stop_event):
+def run_sniffer(stop_event, interface=None):
     """The target function for the sniffer thread."""
-    print("Sniffer thread started.")
-    sniff(filter="ip", prn=packet_handler_with_emit, stop_filter=lambda p: stop_event.is_set())
-    print("Sniffer thread stopped.")
+    print(f"Sniffer thread started on interface: {interface or 'default'}.")
+    try:
+        sniff(iface=interface, filter="ip", prn=packet_handler_with_emit, stop_filter=lambda p: stop_event.is_set())
+    except Exception as e:
+        print(f"Error starting sniffer: {e}")
+        # Notify the client that the sniffer failed to start
+        socketio.emit('sniffer_error', {'error': str(e)})
+    finally:
+        print("Sniffer thread stopped.")
+
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    interfaces = get_if_list()
+    return render_template('index.html', interfaces=interfaces)
 
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
     socketio.emit('stats_update', get_stats())
 
-# All other socket handlers remain the same...
 @socketio.on('start_logging')
-def handle_start_logging():
+def handle_start_logging(data):
     global sniffer_thread
+    selected_interface = data.get('interface')
+    
+    # Use None for the interface if 'default' is selected, otherwise use the name
+    interface_to_use = None if selected_interface == 'default' else selected_interface
+
     if sniffer_thread is None or not sniffer_thread.is_alive():
         stop_sniffer_event.clear()
-        sniffer_thread = Thread(target=run_sniffer, args=(stop_sniffer_event,))
+        sniffer_thread = Thread(target=run_sniffer, args=(stop_sniffer_event, interface_to_use))
         sniffer_thread.start()
-        print("Logging started.")
+        print(f"Logging started on interface: '{interface_to_use or 'default'}'.")
+
 
 @socketio.on('stop_logging')
 def handle_stop_logging():
     stop_sniffer_event.set()
     global sniffer_thread
+    if sniffer_thread:
+        sniffer_thread.join() # Wait for the thread to finish
     sniffer_thread = None
     print("Logging stopped.")
     
